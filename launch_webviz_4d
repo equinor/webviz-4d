@@ -1,0 +1,24 @@
+#!/bin/bash 
+#set -x
+
+if [ $# -ne 1 ]; then
+    echo "ERROR: WebViz-4D configuration file must be given"
+    exit
+fi
+
+config_file=$1
+
+if ! [ -f $config_file ]; then
+    echo "Configuration file doesn't exist"
+    exit
+fi   
+
+unset PYTHONPATH
+source ./venv/bin/activate
+
+if ! [[ -f ~/.local/share/webviz/ca.crt ]]; then webviz certificate --auto-install; fi 
+
+if ! grep -sq '"browser":' ~/.local/share/webviz/user_settings.json; then webviz preferences --browser chromium-browser; fi
+
+webviz build $config_file --theme equinor
+     
