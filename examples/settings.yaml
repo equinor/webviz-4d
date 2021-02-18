@@ -1,11 +1,10 @@
-wellfolder:
-    ./well_data               
-production_data:
-    ./production_data 
-polygon_data:
-    ./polygon_data   
+field_name: <field>
+wellfolder: ./well_data               
+production_data: ./production_data 
+polygon_data: ./polygon_data   
       
-colormaps_folder: ./colormaps/    
+colormaps_folder: ./colormaps
+selector_file: ./selectors.yaml     
     
 fmu_directory: <case> 
 
@@ -27,7 +26,7 @@ map_settings:
     colormaps_settings: ./attribute_maps.csv
     default_colormap: inferno_r
     attribute_settings:     
-        4d_depth_rms:
+        4d_amplitude_rms:
             color:   geoprobe_filtered_r
             min:    -0.01
             max:    0.01
