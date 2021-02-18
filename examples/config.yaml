@@ -16,6 +16,11 @@ pages:
     content:
       - Markdown:
           markdown_file: ./front_page.md
+          
+  - title: Documentation
+    content:  
+      - EmbedPdf:
+          pdf_file: ./WebViz-4D.pdf      
 
   - title: Observed and simulated maps
     content:
@@ -26,63 +31,31 @@ pages:
           colormaps_folder: ./colormaps/
 
           map1_defaults:
-            attribute: <attribute>
-            name: <name>
+            attribute: 4d_amplitude_rms
+            name: <zone/surface>
             map_type: observed
             ensemble: iter-0
             realization: realization-0
           map2_defaults:
-            attribute: <attribute>
-            name: <name>
+            attribute: 4d_amplitude_rms
+            name: <zone/surface>
             map_type: simulated
             ensemble: iter-0
             realization: realization-0
           map3_defaults:
-            attribute: <attribute>
-            name: <name>
+            attribute:average_swat
+            name: <zone/surface>>
             map_type: simulated
             ensemble: iter-0
             realization: realization-0
 
-          default_interval: <2020-10-01-2019-10-01>
+          default_interval: <t2-t1>
 
+          selector_file: ./selectors.yaml
           surface_metadata_file: ./surface_metadata.csv
           attribute_maps_file: ./attribute_maps.csv
           settings: ./settings.yaml
-          intervals_file: ./all_intervals.csv
-
-  - title: Observed maps
-    content:
-      - SurfaceViewer4D:
-          wellfolder: ./well_data
-          production_data: ./production_data
-          polygon_data: ./polygon_data
-          colormaps_folder: ./colormaps/
-
-          map1_defaults:
-            attribute: <attribute>
-            name: <name>
-            map_type: observed
-            ensemble: iter-0
-            realization: realization-0
-          map2_defaults:
-            attribute: <attribute>
-            name: <name>
-            map_type: simulated
-            ensemble: iter-0
-            realization: realization-0
-          map3_defaults:
-            attribute: <attribute>
-            name: <name>
-            map_type: simulated
-            ensemble: iter-0
-            realization: realization-0
-
-          default_interval: <2020-10-01-2019-10-01>
-
-          surface_metadata_file: ./surface_metadata.csv
-          attribute_maps_file: ./attribute_maps.csv
-          settings: ./settings.yaml
+          interval_mode: "reverse"
 
   - title: Wellbore overview
     content:
@@ -179,3 +152,4 @@ pages:
       - SyntaxHighlighter:
           filename: ./settings.yaml
           dark_theme: yes
+          
