@@ -16,8 +16,8 @@ from webviz_4d._datainput.common import (
     get_update_dates,
     get_plot_label,
     get_dates,
-    get_interval,
 )
+
 from webviz_4d._datainput.well import load_all_wells
 from webviz_4d._datainput._production import make_new_well_layer
 
@@ -149,37 +149,21 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         self.map_defaults = []
         self.maps_metadata_list = []
-        # self.intervals = []
 
         if map1_defaults is not None:
             map1_defaults["interval"] = default_interval
             self.map_defaults.append(map1_defaults)
             self.map1_options = self.selection_list[map1_defaults["map_type"]]
 
-            # map_metadata, intervals_list = self.create_selector_lists(map1_defaults)
-
-            # self.maps_metadata_list.append(map_metadata)
-            # self.intervals.append(intervals_list)
-
         if map2_defaults is not None:
             map2_defaults["interval"] = default_interval
             self.map_defaults.append(map2_defaults)
             self.map2_options = self.selection_list[map2_defaults["map_type"]]
 
-            # map_metadata, intervals_list = self.create_selector_lists(map2_defaults)
-
-            # self.maps_metadata_list.append(map_metadata)
-            # self.intervals.append(intervals_list)
-
         if map3_defaults is not None:
             map3_defaults["interval"] = default_interval
             self.map_defaults.append(map3_defaults)
             self.map2_options = self.selection_list[map2_defaults["map_type"]]
-
-            # map_metadata, intervals_list = self.create_selector_lists(map3_defaults)
-
-            # self.maps_metadata_list.append(map_metadata)
-            # self.intervals.append(intervals_list)
 
         print("Default interval", default_interval)
 
@@ -212,8 +196,8 @@ class SurfaceViewer4D(WebvizPluginABC):
             self.polygon_layers = load_polygons(self.polygon_files)
 
         # Read update dates and well data
-        # self.drilled_wells_df: dataframe with wellpaths (x- and y positions) for all drilled wells
-        # self.drilled_wells_info: dataframe with metadata for all drilled wells
+        #    self.drilled_wells_df: dataframe with wellpaths (x- and y positions) for all drilled wells
+        #    self.drilled_wells_info: dataframe with metadata for all drilled wells
         self.wellfolder = wellfolder
         print("Reading well data from", self.wellfolder)
 
