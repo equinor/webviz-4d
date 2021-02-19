@@ -68,7 +68,7 @@ def get_position_data(well_dataframe, md_start, md_end):
         dfr.append(well_df.iloc[-1])
 
         well_df = dfr.reset_index(drop=True)
-            
+
     positions = well_df[["X_UTME", "Y_UTMN"]].values
 
     return positions
