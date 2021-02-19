@@ -141,7 +141,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                 default_interval = self.selection_list[self.observations]["interval"][0]
             except:
                 try:
-                    default_interval = self.selection_list[self.sumulations][
+                    default_interval = self.selection_list[self.simulations][
                         "interval"
                     ][0]
                 except:
@@ -206,14 +206,17 @@ class SurfaceViewer4D(WebvizPluginABC):
                 csv_file=Path(self.wellfolder) / "wellbore_info.csv"
             )
             update_dates = get_update_dates(
-                welldata=Path(self.wellfolder) / ".welldata_update.yaml",
-                productiondata=Path(self.wellfolder) / ".production_update.yaml",
+                welldata=get_path(Path(self.wellfolder) / ".welldata_update.yaml"),
+                productiondata=get_path(
+                    Path(self.wellfolder) / ".production_update.yaml"
+                ),
             )
             self.well_update = update_dates["well_update_date"]
             self.production_update = update_dates["production_last_date"]
             self.all_wells_info = read_csv(
                 csv_file=Path(self.wellfolder) / "wellbore_info.csv"
             )
+
             self.all_wells_info["file_name"] = self.all_wells_info["file_name"].apply(
                 lambda x: get_path(Path(x))
             )
