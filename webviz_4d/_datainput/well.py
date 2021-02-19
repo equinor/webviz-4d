@@ -32,11 +32,7 @@ def load_all_wells(metadata):
         raise Exception("No wellfiles found")
 
     for wellfile in wellfiles:
-        # print(wellfile)
         well = load_well(wellfile)
-        well.downsample()
-
-        # print("    - loaded")
 
         well.dataframe = well.dataframe[["X_UTME", "Y_UTMN", "Z_TVDSS", "MD"]]
         well_metadata = metadata.loc[metadata["wellbore.rms_name"] == well.wellname]
@@ -62,12 +58,18 @@ def load_all_wells(metadata):
 def get_position_data(well_dataframe, md_start, md_end):
     """ Return x- and y-values for a well between given depths """
 
-    well_dataframe = well_dataframe[well_dataframe["MD"] >= md_start]
+    well_df = well_dataframe[well_dataframe["MD"] >= md_start]
 
     if md_end:
-        well_dataframe = well_dataframe[well_dataframe["MD"] <= md_end]
+        well_df = well_df[well_df["MD"] <= md_end]
 
-    positions = well_dataframe[["X_UTME", "Y_UTMN"]].values
+    if well_df.size > 20:
+        dfr = well_df[::4]
+        dfr.append(well_df.iloc[-1])
+
+        well_df = dfr.reset_index(drop=True)
+
+    positions = well_df[["X_UTME", "Y_UTMN"]].values
 
     return positions
 
