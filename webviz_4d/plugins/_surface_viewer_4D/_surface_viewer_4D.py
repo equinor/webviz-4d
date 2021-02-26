@@ -252,7 +252,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                     else:
                         fluids = []
 
-                    #print("Creating well layer for", value)
+                    # print("Creating well layer for", value)
                     well_layer = make_new_well_layer(
                         interval,
                         self.drilled_wells_df,
@@ -465,11 +465,11 @@ class SurfaceViewer4D(WebvizPluginABC):
 
     def create_additional_well_layers(self, interval):
         interval_well_layers = []
-        
-        if get_dates(interval)[0] <= self.production_update:           
+
+        if get_dates(interval)[0] <= self.production_update:
             for key, value in self.additional_well_layers.items():
                 layer_name = interval + "_" + key
-                #print("Creating well layer for", layer_name)
+                # print("Creating well layer for", layer_name)
 
                 if "production" in key:
                     fluids = ["oil"]
@@ -490,11 +490,11 @@ class SurfaceViewer4D(WebvizPluginABC):
                 )
 
                 if well_layer is not None:
-                    interval_well_layers.append(well_layer)  
+                    interval_well_layers.append(well_layer)
 
         return interval_well_layers
 
-    def make_map(self, data, ensemble, real, attribute_settings, map_idx):       
+    def make_map(self, data, ensemble, real, attribute_settings, map_idx):
         data = json.loads(data)
 
         attribute_settings = json.loads(attribute_settings)
@@ -551,13 +551,14 @@ class SurfaceViewer4D(WebvizPluginABC):
                     surface_layers.append(well_layer)
 
             interval = data["date"]
-            
-            if interval != self.selected_intervals[map_idx]:  # Create new interval layers if selected interval has changesd
+
+            if (
+                interval != self.selected_intervals[map_idx]
+            ):  # Create new interval layers if selected interval has changesd
                 self.interval_well_layers = self.create_additional_well_layers(interval)
 
             for interval_layer in self.interval_well_layers:
                 surface_layers.append(interval_layer)
-                  
 
             self.selected_names[map_idx] = data["name"]
             self.selected_attributes[map_idx] = data["attr"]

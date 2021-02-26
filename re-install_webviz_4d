@@ -1,0 +1,23 @@
+#!/bin/bash 
+#set -x
+
+if [ -d "venv" ]; then 
+    rm -rf venv 
+fi
+
+python -m venv venv
+source ./venv/bin/activate
+
+echo "Installing all necessary packages ..."
+
+pip install --upgrade pip
+pip install libecl 
+pip install webviz-config
+pip install webviz-subsurface
+pip install webviz-config-equinor
+pip install opm
+pip install black
+pip install .
+
+echo "WebViz-4D installation completed"
+echo "Run ./create_new_field in order to copy a template for a new field"
