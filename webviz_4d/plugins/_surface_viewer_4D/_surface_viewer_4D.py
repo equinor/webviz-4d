@@ -252,7 +252,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                     else:
                         fluids = []
 
-                    print("Creating well layer for", value)
+                    # print("Creating well layer for", value)
                     well_layer = make_new_well_layer(
                         interval,
                         self.drilled_wells_df,
@@ -298,7 +298,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                         )
                     )
 
-            # Create production and injection layers for default interval
+            # Create production and injection layers for the default interval
             self.additional_well_layers = {
                 "production": "Producers",
                 "production_start": "Producers - started",
@@ -308,30 +308,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                 "injection_completed": "Injectors - completed",
             }
 
-            for key, value in self.additional_well_layers.items():
-                layer_name = interval + "_" + key
-                print("Creating well layer for", layer_name)
-
-                if "production" in key:
-                    fluids = ["oil"]
-                elif "injection" in key:
-                    fluids = ["gas", "water"]
-                else:
-                    fluids = []
-
-                well_layer = make_new_well_layer(
-                    interval,
-                    self.drilled_wells_df,
-                    self.drilled_wells_info,
-                    self.prod_data,
-                    self.colors,
-                    selection=key,
-                    fluids=fluids,
-                    label=value,
-                )
-
-                if well_layer is not None:
-                    self.interval_well_layers[layer_name] = well_layer
+            self.interval_well_layers = self.create_additional_well_layers(interval)
 
         # Create selectors (attributes, names and dates) for all 3 maps
         self.selector = SurfaceSelector(app, self.selection_list, self.map_defaults[0])
@@ -422,8 +399,6 @@ class SurfaceViewer4D(WebvizPluginABC):
             time1 = selected_interval[0:10]
             time2 = selected_interval[11:]
 
-        print(real, ensemble, map_type, time1, time2, name, attribute)
-
         try:
             selected_metadata = self.surface_metadata[
                 (self.surface_metadata["fmu_id.realization"] == real)
@@ -488,6 +463,37 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         return map_metadata, intervals_list
 
+    def create_additional_well_layers(self, interval):
+        interval_well_layers = []
+
+        if get_dates(interval)[0] <= self.production_update:
+            for key, value in self.additional_well_layers.items():
+                layer_name = interval + "_" + key
+                # print("Creating well layer for", layer_name)
+
+                if "production" in key:
+                    fluids = ["oil"]
+                elif "injection" in key:
+                    fluids = ["gas", "water"]
+                else:
+                    fluids = []
+
+                well_layer = make_new_well_layer(
+                    interval,
+                    self.drilled_wells_df,
+                    self.drilled_wells_info,
+                    self.prod_data,
+                    self.colors,
+                    selection=key,
+                    fluids=fluids,
+                    label=value,
+                )
+
+                if well_layer is not None:
+                    interval_well_layers.append(well_layer)
+
+        return interval_well_layers
+
     def make_map(self, data, ensemble, real, attribute_settings, map_idx):
         data = json.loads(data)
 
@@ -540,44 +546,19 @@ class SurfaceViewer4D(WebvizPluginABC):
             for polygon_layer in self.polygon_layers:
                 surface_layers.append(polygon_layer)
 
-            self.selected_intervals[map_idx] = data["date"]
-            interval = data["date"]
-
             if self.well_base_layers:
                 for well_layer in self.well_base_layers:
                     surface_layers.append(well_layer)
 
-            now = datetime.today().strftime("%Y-%m-%d")
-            for key, value in self.additional_well_layers.items():
-                layer_name = interval + "_" + key
-                well_layer = None
+            interval = data["date"]
 
-                if layer_name not in self.interval_well_layers.keys():
-                    if "production" in key:
-                        fluids = ["oil"]
-                    elif "injection" in key:
-                        fluids = ["gas", "water"]
-                    else:
-                        fluids = []
+            if (
+                interval != self.selected_intervals[map_idx]
+            ):  # Create new interval layers if selected interval has changesd
+                self.interval_well_layers = self.create_additional_well_layers(interval)
 
-                    if get_dates(interval)[0] <= now:  # Don't include future intervals
-                        well_layer = make_new_well_layer(
-                            interval,
-                            self.drilled_wells_df,
-                            self.drilled_wells_info,
-                            self.prod_data,
-                            self.colors,
-                            selection=key,
-                            fluids=fluids,
-                            label=value,
-                        )
-
-                        if well_layer is not None:
-                            self.interval_well_layers[layer_name] = well_layer
-                else:
-                    well_layer = self.interval_well_layers[layer_name]
-
-                surface_layers.append(well_layer)
+            for interval_layer in self.interval_well_layers:
+                surface_layers.append(interval_layer)
 
             self.selected_names[map_idx] = data["name"]
             self.selected_attributes[map_idx] = data["attr"]
