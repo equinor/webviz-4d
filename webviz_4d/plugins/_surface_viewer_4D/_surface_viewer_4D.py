@@ -469,7 +469,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         if get_dates(interval)[0] <= self.production_update:
             for key, value in self.additional_well_layers.items():
                 layer_name = interval + "_" + key
-                # print("Creating well layer for", layer_name)
+                #print("Creating well layer for", layer_name)
 
                 if "production" in key:
                     fluids = ["oil"]
@@ -564,6 +564,7 @@ class SurfaceViewer4D(WebvizPluginABC):
             self.selected_attributes[map_idx] = data["attr"]
             self.selected_ensembles[map_idx] = ensemble
             self.selected_realizations[map_idx] = real
+            self.selected_intervals[map_idx] = interval
 
             heading, sim_info, label = self.get_heading(map_idx, self.observations)
         else:
