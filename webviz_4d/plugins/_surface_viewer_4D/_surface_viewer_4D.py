@@ -469,7 +469,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         if get_dates(interval)[0] <= self.production_update:
             for key, value in self.additional_well_layers.items():
                 layer_name = interval + "_" + key
-                #print("Creating well layer for", layer_name)
+                # print("Creating well layer for", layer_name)
 
                 if "production" in key:
                     fluids = ["oil"]
