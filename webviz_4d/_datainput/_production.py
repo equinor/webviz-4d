@@ -165,6 +165,8 @@ def make_new_well_layer(
             if "active" in selection and start_date is not None:
                 if isinstance(stop_date, str) and stop_date == "---":
                     status = True
+                elif stop_date is None:
+                    status = True
                 elif isinstance(stop_date, float) and math.isnan(stop_date):
                     status = True
                 else:
