@@ -564,6 +564,7 @@ class SurfaceViewer4D(WebvizPluginABC):
             self.selected_attributes[map_idx] = data["attr"]
             self.selected_ensembles[map_idx] = ensemble
             self.selected_realizations[map_idx] = real
+            self.selected_intervals[map_idx] = interval
 
             heading, sim_info, label = self.get_heading(map_idx, self.observations)
         else:
