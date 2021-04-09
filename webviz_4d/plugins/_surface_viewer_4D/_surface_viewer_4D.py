@@ -556,6 +556,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                 interval != self.selected_intervals[map_idx]
             ):  # Create new interval layers if selected interval has changesd
                 self.interval_well_layers = self.create_additional_well_layers(interval)
+                self.selected_intervals[map_idx] = interval
 
             for interval_layer in self.interval_well_layers:
                 surface_layers.append(interval_layer)
