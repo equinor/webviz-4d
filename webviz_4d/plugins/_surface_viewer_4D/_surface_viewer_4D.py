@@ -196,8 +196,8 @@ class SurfaceViewer4D(WebvizPluginABC):
             self.polygon_layers = load_polygons(self.polygon_files)
 
         # Read update dates and well data
-        #    self.drilled_wells_df: dataframe with wellpaths (x- and y positions) for all drilled wells
-        #    self.drilled_wells_info: dataframe with metadata for all drilled wells
+        #    self.all_wells_df: dataframe with wellpaths (x- and y positions) for all wells (both drilled and planned)
+        #    self.all_wells_info: dataframe with metadata for all wells (both drilled and planned)
         self.wellfolder = wellfolder
         print("Reading well data from", self.wellfolder)
 
@@ -285,11 +285,18 @@ class SurfaceViewer4D(WebvizPluginABC):
                 planned_layers = planned_layers_df.unique()
 
                 for planned_layer in planned_layers:
+                    selected_planned_well_df = planned_well_df[
+                        planned_well_df["layer_name"] == planned_layer
+                    ]
+                    selected_planned_well_info = planned_well_info[
+                        planned_well_info["layer_name"] == planned_layer
+                    ]
+
                     self.well_base_layers.append(
                         make_new_well_layer(
                             self.selected_intervals[0],
-                            planned_well_df,
-                            planned_well_info,
+                            selected_planned_well_df,
+                            selected_planned_well_info,
                             prod_data=None,
                             colors=self.colors,
                             selection="planned",
