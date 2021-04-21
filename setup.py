@@ -40,4 +40,8 @@ setup(
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
     ],
+    project_urls={
+        "Source": "https://github.com/equinor/webviz-4d",
+        "Tracker": "https://github.com/equinor/webviz-4d/issues",
+    },
 )
