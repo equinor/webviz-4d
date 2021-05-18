@@ -1,15 +1,5 @@
-import os
-import glob
-import json
-import numpy
-import statistics
 import pandas as pd
-import yaml
-from pandas import json_normalize
 import xtgeo
-
-from webviz_config.common_cache import CACHE
-from webviz_4d._datainput.common import find_files
 
 
 def load_well(well_path):
@@ -63,7 +53,7 @@ def get_position_data(well_dataframe, md_start, md_end):
     if md_end:
         well_df = well_df[well_df["MD"] <= md_end]
 
-    if well_df.size > 20:
+    if len(well_df) > 20:
         dfr = well_df[::4]
         dfr.append(well_df.iloc[-1])
 
@@ -75,81 +65,19 @@ def get_position_data(well_dataframe, md_start, md_end):
 
 
 def get_well_polyline(
-    short_name,
     well_dataframe,
-    well_type,
-    fluid,
-    info,
     md_start,
     md_end,
-    selection,
-    colors,
+    color,
+    tooltip,
 ):
-    """ Create polyline data - well trajectory, color and tooltip """
-    # print("get_well_polyline", selection, short_name)
+    """ Create polyline data - contains well trajectory, color and tooltip """
 
-    color = "black"
+    positions = get_position_data(well_dataframe, md_start, md_end)
 
-    if colors:
-        color = colors["default"]
-
-    tooltip = str(short_name) + " : " + well_type
-
-    status = False
-
-    if fluid and not pd.isna(fluid):
-        tooltip = tooltip + " (" + info + ")"
-
-    if selection:
-        if ("reservoir" in selection) and not pd.isna(fluid) and md_start > 0:
-            positions = get_position_data(well_dataframe, md_start, md_end)
-            status = True
-
-        elif selection == "planned" and well_type == selection:
-            if colors:
-                color = colors[selection]
-
-            positions = get_position_data(well_dataframe, md_start, md_end)
-            status = True
-
-        elif well_type == selection and not pd.isna(fluid) and md_start > 0:
-            ind = fluid.find(",")
-
-            if ind > 0:
-                fluid = "mixed"
-
-            if colors:
-                color = colors[fluid + "_" + selection]
-
-            positions = get_position_data(well_dataframe, md_start, md_end)
-            status = True
-
-        elif pd.isna(fluid):
-            positions = get_position_data(well_dataframe, md_start, md_end)
-            status = True
-
-        elif "active" in selection:
-            positions = get_position_data(well_dataframe, md_start, md_end)
-            status = True
-
-        elif selection == "production_start" or selection == "production_completed":
-            positions = get_position_data(well_dataframe, md_start, md_end)
-            color = colors[fluid + "_production"]
-            status = True
-
-        elif selection == "injection_start" or selection == "injection_completed":
-            positions = get_position_data(well_dataframe, md_start, md_end)
-            color = colors[fluid + "_injection"]
-            status = True
-
-    else:
-        positions = get_position_data(well_dataframe, md_start, md_end)
-        status = True
-
-    if status:
-        return {
-            "type": "polyline",
-            "color": color,
-            "positions": positions,
-            "tooltip": tooltip,
-        }
+    return {
+        "type": "polyline",
+        "color": color,
+        "positions": positions,
+        "tooltip": tooltip,
+    }

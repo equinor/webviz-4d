@@ -1,11 +1,8 @@
-import pandas as pd
 import math
-
-from webviz_config.webviz_store import webvizstore
-from webviz_config.common_cache import CACHE
+import pandas as pd
 
 import webviz_4d._datainput.common as common
-from webviz_4d._datainput.well import get_well_polyline, load_all_wells
+from webviz_4d._datainput.well import get_well_polyline
 
 
 def get_production_type(selection):
@@ -58,155 +55,147 @@ def make_new_well_layer(
     label="Drilled wells",
 ):
     """Make layeredmap wells layer"""
-    dates = common.get_dates(interval_4d)
-
-    interval_start = dates[1]
-    interval_end = dates[0]
-
-    prod_well_types = ["production", "injection"]
 
     data = []
 
-    wellbores = wells_df["WELLBORE_NAME"].values
+    wellbores = metadata_df["wellbore.name"].values
     list_set = set(wellbores)
     # convert the set to the list
-    unique_wellbores = list(list_set)
+    unique_wellbores = sorted(list(list_set))
 
     for wellbore in unique_wellbores:
         status = False
-        short_name = None
         md_start = 0
         md_end = None
-        top_completion = None
-        base_completion = None
-        well_fluid = None
-        polyline_data = None
-        start_date = None
-        stop_date = None
-        info = None
+        color = "black"
 
-        well_dataframe = wells_df[wells_df["WELLBORE_NAME"] == wellbore]
-        well_metadata = metadata_df[metadata_df["wellbore.true_name"] == wellbore]
-        md_start = get_value(well_metadata, "wellbore.top_res_md", "min")
+        well_metadata = metadata_df[metadata_df["wellbore.name"] == wellbore]
+        md_top_res = get_value(well_metadata, "wellbore.top_res_md", "min")
         short_name = get_value(well_metadata, "wellbore.short_name", 0)
+        true_name = get_value(well_metadata, "wellbore.true_name", 0)
         pdm_well_name = get_value(well_metadata, "wellbore.pdm_name", 0)
         top_completion = get_value(well_metadata, "top_completion_md", 0)
         base_completion = get_value(well_metadata, "base_completion_md", 0)
         well_type = get_value(well_metadata, "wellbore.type", 0)
-        info = well_type
+        well_label = get_value(well_metadata, "layer_name", 0)
+        well_dataframe = wells_df[wells_df["WELLBORE_NAME"] == true_name]
 
-        if selection in ["reservoir_section", "planned"]:
-            polyline_data = get_well_polyline(
-                short_name,
-                well_dataframe,
-                well_type,
-                well_fluid,
-                info,
-                md_start,
-                md_end,
-                selection,
-                colors,
-            )
-        elif selection == "drilled_wells":
-            md_start = 0
-            polyline_data = get_well_polyline(
-                short_name,
-                well_dataframe,
-                well_type,
-                well_fluid,
-                info,
-                md_start,
-                md_end,
-                selection,
-                colors,
-            )
+        fluids = get_value(well_metadata, "wellbore.fluids", 0)
+
+        if not isinstance(fluids, str):
+            fluids = ""
+
+        tooltip = str(short_name) + ": " + well_type + " (" + str(fluids) + ")"
+
+        if selection == "drilled_wells":
+            color = "black"
             status = True
-
-        elif well_type in prod_well_types:  # Production and injection layers
-            status = False
+        elif selection == "planned" and well_type == selection and well_label == label:
+            color = colors[selection]
+            status = True
+        elif selection == "reservoir_section":
+            color = "black"
+            if md_top_res:
+                md_start = md_top_res
+                status = True
+        else:
+            volume = 0
             interval = check_interval(interval_4d)
 
-            production_type = get_production_type(selection)
+            if md_top_res:
+                md_start = md_top_res
 
-            if "active" in selection:
-                interval = ""
+            if "production" in selection and md_top_res:
+                fluid = "oil"
+                prod_type = "production"
+                fluid_code = fluid + "_production"
+                start_date, stop_date, volume = extract_production_info(
+                    pdm_well_name, prod_data, interval, "production", fluid
+                )
+                info = get_info(start_date, stop_date, fluid, volume)
 
-            start_dates = []
-            stop_dates = []
-            volumes = []
-            infos = []
+            elif "injection" in selection and md_top_res:
+                gi_start_date, gi_stop_date, gi_volume = extract_production_info(
+                    pdm_well_name, prod_data, interval, "injection", "gas"
+                )
+                wi_start_date, wi_stop_date, wi_volume = extract_production_info(
+                    pdm_well_name, prod_data, interval, "injection", "water"
+                )
 
-            if pdm_well_name:
-                for fluid in fluids:
-                    start_date, stop_date, volume = extract_production_info(
-                        pdm_well_name, prod_data, interval, production_type, fluid
-                    )
+                if gi_start_date and wi_start_date:
+                    start_date = min(gi_start_date, wi_start_date)
+                    stop_date = max(gi_start_date, wi_start_date)
+                    fluid = "wag"
+                    fluid_code = fluid + "_injection"
+                    volume = 1
+                elif gi_start_date:
+                    start_date = gi_start_date
+                    stop_date = gi_stop_date
+                    fluid = "gas"
+                    fluid_code = fluid + "_injection"
+                    volume = gi_volume
+                elif wi_start_date:
+                    start_date = wi_start_date
+                    stop_date = wi_stop_date
+                    fluid = "water"
+                    fluid_code = fluid + "_injection"
+                    volume = wi_volume
 
-                    info = get_info(start_date, stop_date, fluid, volume)
+                prod_type = "injection"
 
-                    if volume is not None and volume > 0:
-                        start_dates.append(start_date)
-                        stop_dates.append(stop_date)
-                        volumes.append(volume)
-                        infos.append(info)
-                        well_fluid = fluid
+            if volume and volume > 0:
+                info = get_info(start_date, stop_date, fluid, volume)
+
+                started = check_interval_date(interval, start_date)
+                stopped = check_interval_date(interval, stop_date)
+
+                if "active" in selection and start_date:
+                    if stop_date is None or stop_date == "---":
+                        color = "black"
+                        info = get_info(start_date, stop_date, fluid, volume)
                         status = True
-
-            if len(start_dates) == 1:  # Single fluid
-                start_date = start_dates[0]
-                stop_date = stop_dates[0]
-                info = infos[0]
-            elif len(start_dates) > 1:  # WAG injection
-                start_date = min(start_dates)
-                stop_date = max(stop_dates)
-                info = "WAG injection"
-                well_type = "wag_injection"
-
-            if "active" in selection and start_date is not None:
-                if isinstance(stop_date, str) and stop_date == "---":
-                    status = True
-                elif stop_date is None:
-                    status = True
-                elif isinstance(stop_date, float) and math.isnan(stop_date):
+                elif "start" in selection and started == "inside":
+                    color = colors[fluid_code]
+                    info = get_info(start_date, stop_date, fluid, volume)
                     status = True
                 else:
-                    status = False
+                    color = colors[fluid_code]
+                    if started == "greater" or stopped == "less":
+                        interval_status = False
+                    else:
+                        interval_status = True
 
-            if start_date and (
-                selection == "production_start" or selection == "injection_start"
-            ):
-                if start_date >= interval_start and start_date < interval_end:
-                    status = True
-                else:
-                    status = False
+                    if interval_status:
+                        color = colors[fluid_code]
+                        info = get_info(start_date, stop_date, fluid, volume)
 
-            if status and (
-                selection == "production_completed"
-                or selection == "injection_completed"
-            ):
+                        if (
+                            "completed" in selection
+                            and top_completion
+                            and base_completion
+                        ):
+                            md_start = top_completion
+                            md_end = base_completion
+                            status = True
+                        elif selection == "production" or selection == "injection":
+                            status = True
+            if status:
+                tooltip = short_name + ": " + prod_type + " (" + info + ")"
 
-                if top_completion and base_completion:
-                    md_start = top_completion
-                    md_end = base_completion
-                    status = True
-                else:
-                    status = False
+        polyline_data = False
 
         if status:
             polyline_data = get_well_polyline(
-                short_name,
                 well_dataframe,
-                well_type,
-                well_fluid,
-                info,
                 md_start,
                 md_end,
-                selection,
-                colors,
+                color,
+                tooltip,
             )
 
         if polyline_data:
             data.append(polyline_data)
+
     if data:
         layer = {"name": label, "checked": False, "base_layer": False, "data": data}
     else:
@@ -252,8 +241,14 @@ def extract_production_info(pdm_well_name, prod_data, interval, production_type,
                 well_prod_info[column2].values[0] - well_prod_info[column1].values[0]
             )
 
-        if math.isnan(volume):
+        if math.isnan(volume) or volume == 0:
             volume = None
+
+        if start_date != start_date:
+            start_date = None
+
+        if stop_date != stop_date:
+            stop_date = None
     return start_date, stop_date, volume
 
 
@@ -263,22 +258,38 @@ def get_info(start_date, stop_date, fluid, volume):
     if volume is None or volume == 0:
         return None
 
-    unit = None
-
-    if fluid in units:
-        unit = units[fluid]
+    unit = units.get(fluid)    
 
     if stop_date is None or (not isinstance(stop_date, str) and math.isnan(stop_date)):
         stop_date = "---"
 
-    info = (
-        fluid
-        + " {:.0f} ".format(volume)
-        + unit
-        + " Start: "
-        + str(start_date)
-        + " Last: "
-        + str(stop_date)
-    )
+    if fluid == "wag":
+        info = "(WAG) Start:" + str(start_date) + " Last: " + str(stop_date)
+    else:
+        info = (
+            fluid
+            + " {:.0f} ".format(volume)
+            + unit
+            + " Start: "
+            + str(start_date)
+            + " Last: "
+            + str(stop_date)
+        )
 
     return info
+
+
+def check_interval_date(interval, selected_date):
+    if selected_date is None or (
+        not isinstance(selected_date, str) and math.isnan(selected_date)
+    ):
+        status = None
+    elif selected_date >= interval[:10]:
+        if selected_date < interval[11:]:
+            status = "inside"
+        else:
+            status = "greater"
+    else:
+        status = "less"
+
+    return status

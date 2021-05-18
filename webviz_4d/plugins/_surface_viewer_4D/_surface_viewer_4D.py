@@ -1,12 +1,7 @@
-from typing import List, Tuple, Union, Dict, Callable, Any
-import io
+from typing import List, Tuple, Callable
 from pathlib import Path
 import json
 import os
-import glob
-import pandas as pd
-import numpy as np
-from datetime import datetime
 
 from webviz_config import WebvizPluginABC
 from webviz_4d._datainput._surface import make_surface_layer, load_surface
@@ -26,10 +21,7 @@ from webviz_4d._datainput._colormaps import load_custom_colormaps
 from webviz_4d._datainput._polygons import load_polygons
 
 from webviz_4d._datainput._metadata import (
-    get_col_values,
-    create_map_defaults,
     get_map_defaults,
-    sort_realizations,
 )
 
 from ._webvizstore import read_csv, read_csvs, find_files, get_path
@@ -196,8 +188,8 @@ class SurfaceViewer4D(WebvizPluginABC):
             self.polygon_layers = load_polygons(self.polygon_files)
 
         # Read update dates and well data
-        #    self.all_wells_df: dataframe with wellpaths (x- and y positions) for all wells (both drilled and planned)
-        #    self.all_wells_info: dataframe with metadata for all wells (both drilled and planned)
+        #    self.drilled_wells_df: dataframe with wellpaths (x- and y positions) for all drilled wells
+        #    self.drilled_wells_info: dataframe with metadata for all drilled wells
         self.wellfolder = wellfolder
         print("Reading well data from", self.wellfolder)
 
@@ -252,7 +244,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                     else:
                         fluids = []
 
-                    # print("Creating well layer for", value)
+                    print("Creating well layer for", value)
                     well_layer = make_new_well_layer(
                         interval,
                         self.drilled_wells_df,
@@ -285,18 +277,11 @@ class SurfaceViewer4D(WebvizPluginABC):
                 planned_layers = planned_layers_df.unique()
 
                 for planned_layer in planned_layers:
-                    selected_planned_well_df = planned_well_df[
-                        planned_well_df["layer_name"] == planned_layer
-                    ]
-                    selected_planned_well_info = planned_well_info[
-                        planned_well_info["layer_name"] == planned_layer
-                    ]
-
                     self.well_base_layers.append(
                         make_new_well_layer(
                             self.selected_intervals[0],
-                            selected_planned_well_df,
-                            selected_planned_well_info,
+                            planned_well_df,
+                            planned_well_info,
                             prod_data=None,
                             colors=self.colors,
                             selection="planned",
@@ -311,7 +296,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                 "production_start": "Producers - started",
                 "production_completed": "Producers - completed",
                 "injection": "Injectors",
-                "injection_start": "Injectors -started",
+                "injection_start": "Injectors - started",
                 "injection_completed": "Injectors - completed",
             }
 
@@ -475,9 +460,6 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         if get_dates(interval)[0] <= self.production_update:
             for key, value in self.additional_well_layers.items():
-                layer_name = interval + "_" + key
-                # print("Creating well layer for", layer_name)
-
                 if "production" in key:
                     fluids = ["oil"]
                 elif "injection" in key:
