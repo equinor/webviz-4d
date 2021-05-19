@@ -99,7 +99,8 @@ def make_new_well_layer(
                 md_start = md_top_res
                 status = True
         else:
-            volume = 0
+            interval_volume = 0
+            total_volume = 0
             interval = check_interval(interval_4d)
 
             if md_top_res:
@@ -109,16 +110,31 @@ def make_new_well_layer(
                 fluid = "oil"
                 prod_type = "production"
                 fluid_code = fluid + "_production"
-                start_date, stop_date, volume = extract_production_info(
+
+                (
+                    start_date,
+                    stop_date,
+                    interval_volume,
+                    total_volume,
+                ) = extract_production_info(
                     pdm_well_name, prod_data, interval, "production", fluid
                 )
-                info = get_info(start_date, stop_date, fluid, volume)
 
             elif "injection" in selection and md_top_res:
-                gi_start_date, gi_stop_date, gi_volume = extract_production_info(
+                (
+                    gi_start_date,
+                    gi_stop_date,
+                    interval_gi_volume,
+                    total_gi_volume,
+                ) = extract_production_info(
                     pdm_well_name, prod_data, interval, "injection", "gas"
                 )
-                wi_start_date, wi_stop_date, wi_volume = extract_production_info(
+                (
+                    wi_start_date,
+                    wi_stop_date,
+                    interval_wi_volume,
+                    total_wi_volume,
+                ) = extract_production_info(
                     pdm_well_name, prod_data, interval, "injection", "water"
                 )
 
@@ -127,24 +143,28 @@ def make_new_well_layer(
                     stop_date = max(gi_start_date, wi_start_date)
                     fluid = "wag"
                     fluid_code = fluid + "_injection"
-                    volume = 1
+                    interval_volume = 1
+                    total_volume = 1
                 elif gi_start_date:
                     start_date = gi_start_date
                     stop_date = gi_stop_date
                     fluid = "gas"
                     fluid_code = fluid + "_injection"
-                    volume = gi_volume
+                    interval_volume = interval_gi_volume
+                    total_volume = total_gi_volume
                 elif wi_start_date:
                     start_date = wi_start_date
                     stop_date = wi_stop_date
                     fluid = "water"
                     fluid_code = fluid + "_injection"
-                    volume = wi_volume
+                    interval_volume = interval_wi_volume
+                    total_volume = total_wi_volume
 
                 prod_type = "injection"
 
-            if volume and volume > 0:
-                info = get_info(start_date, stop_date, fluid, volume)
+            if total_volume and total_volume > 0:
+                interval_info = get_info(start_date, stop_date, fluid, interval_volume)
+                total_info = get_info(start_date, stop_date, fluid, total_volume)
 
                 started = check_interval_date(interval, start_date)
                 stopped = check_interval_date(interval, stop_date)
@@ -152,11 +172,11 @@ def make_new_well_layer(
                 if "active" in selection and start_date:
                     if stop_date is None or stop_date == "---":
                         color = "black"
-                        info = get_info(start_date, stop_date, fluid, volume)
+                        info = total_info
                         status = True
                 elif "start" in selection and started == "inside":
                     color = colors[fluid_code]
-                    info = get_info(start_date, stop_date, fluid, volume)
+                    info = interval_info
                     status = True
                 else:
                     color = colors[fluid_code]
@@ -167,7 +187,7 @@ def make_new_well_layer(
 
                     if interval_status:
                         color = colors[fluid_code]
-                        info = get_info(start_date, stop_date, fluid, volume)
+                        info = interval_info
 
                         if (
                             "completed" in selection
@@ -180,7 +200,7 @@ def make_new_well_layer(
                         elif selection == "production" or selection == "injection":
                             status = True
             if status:
-                tooltip = short_name + ": " + prod_type + " (" + info + ")"
+                tooltip = short_name + ": " + prod_type + " (" + str(info) + ")"
 
         polyline_data = False
 
@@ -210,7 +230,8 @@ def extract_production_info(pdm_well_name, prod_data, interval, production_type,
 
     start_date = None
     stop_date = None
-    volume = None
+    interval_volume = None
+    total_volume = None
 
     headers = prod_data.columns
     first_date = common.get_dates(headers[6])[0]
@@ -226,30 +247,32 @@ def extract_production_info(pdm_well_name, prod_data, interval, production_type,
     except:
         well_prod_info = pd.DataFrame()
 
-    if interval == "" and not well_prod_info.empty:
-        volume = well_prod_info.iloc[:, -1:].values[0][0]
-    elif not well_prod_info.empty:
+    if not well_prod_info.empty:
+        total_volume = well_prod_info.iloc[:, -1:].values[0][0]
+
+    if interval != "" and not well_prod_info.empty:
         dates = common.get_dates(interval)
 
         if dates[0] == first_date:
             column = interval
-            volume = well_prod_info[column].values[0]
+            interval_volume = well_prod_info[column].values[0]
         else:
             column1 = first_date + "-" + dates[0]
             column2 = first_date + "-" + dates[1]
-            volume = (
+            interval_volume = (
                 well_prod_info[column2].values[0] - well_prod_info[column1].values[0]
             )
 
-        if math.isnan(volume) or volume == 0:
-            volume = None
+        if math.isnan(interval_volume) or interval_volume == 0:
+            interval_volume = None
 
         if start_date != start_date:
             start_date = None
 
         if stop_date != stop_date:
             stop_date = None
-    return start_date, stop_date, volume
+
+    return start_date, stop_date, interval_volume, total_volume
 
 
 def get_info(start_date, stop_date, fluid, volume):
