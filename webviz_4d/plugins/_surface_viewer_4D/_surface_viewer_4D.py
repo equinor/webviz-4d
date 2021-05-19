@@ -35,7 +35,7 @@ from ._layout import set_layout
 
 
 class SurfaceViewer4D(WebvizPluginABC):
-    """### SurfaceViewer4D """
+    """### SurfaceViewer4D"""
 
     def __init__(
         self,

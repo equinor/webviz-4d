@@ -17,7 +17,7 @@ def get_production_type(selection):
 
 
 def check_interval(interval):
-    """ Flip start and end date if needed """
+    """Flip start and end date if needed"""
     dates = [interval[0:10], interval[11:21]]
 
     if dates[0] > dates[1]:
@@ -258,7 +258,7 @@ def get_info(start_date, stop_date, fluid, volume):
     if volume is None or volume == 0:
         return None
 
-    unit = units.get(fluid)    
+    unit = units.get(fluid)
 
     if stop_date is None or (not isinstance(stop_date, str) and math.isnan(stop_date)):
         stop_date = "---"

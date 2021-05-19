@@ -9,7 +9,7 @@ from matplotlib.colors import ListedColormap
 
 
 def load_custom_colormaps(csv_files):
-    """ Load custom colormaps (stored as csv files) """
+    """Load custom colormaps (stored as csv files)"""
 
     for csv_file in csv_files:
         colormap_df = pd.read_csv(csv_file)
@@ -28,7 +28,7 @@ def load_custom_colormaps(csv_files):
 
 
 def change_colormap(name, red_start, green_start, blue_start, n_values):
-    """ Modify an existing colormap by changing the start color """
+    """Modify an existing colormap by changing the start color"""
 
     colormap = cm.get_cmap(name, 256)
     newcolors = colormap(np.linspace(0, 1, 256))
@@ -55,7 +55,7 @@ def change_colormap(name, red_start, green_start, blue_start, n_values):
 
 
 def change_inferno():
-    """ Change the start of the inferno colorscale from black to gray """
+    """Change the start of the inferno colorscale from black to gray"""
     red = 0.28125
     green = 0.2578
     blue = 0.28125

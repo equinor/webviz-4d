@@ -77,7 +77,7 @@ def array_to_png(tensor, shift=True, colormap=False):
 
 
 def get_colormap(colormap):
-    """ Get selected colrmap from matlplotlig, but modify inferno if selected """
+    """Get selected colrmap from matlplotlig, but modify inferno if selected"""
 
     if colormap == "inferno":
         cmap = [change_inferno()]
