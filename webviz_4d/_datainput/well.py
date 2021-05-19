@@ -3,7 +3,7 @@ import xtgeo
 
 
 def load_well(well_path):
-    """ Return a well object (xtgeo) for a given file (RMS ascii format) """
+    """Return a well object (xtgeo) for a given file (RMS ascii format)"""
     return xtgeo.Well(well_path, mdlogname="MD")
 
 
@@ -46,7 +46,7 @@ def load_all_wells(metadata):
 
 
 def get_position_data(well_dataframe, md_start, md_end):
-    """ Return x- and y-values for a well between given depths """
+    """Return x- and y-values for a well between given depths"""
 
     well_df = well_dataframe[well_dataframe["MD"] >= md_start]
 
@@ -55,9 +55,9 @@ def get_position_data(well_dataframe, md_start, md_end):
 
     if len(well_df) > 20:
         dfr = well_df[::4]
-        dfr.append(well_df.iloc[-1])
+        dfr_append_last = dfr.append(well_df.iloc[-1])
 
-        well_df = dfr.reset_index(drop=True)
+        well_df = dfr_append_last.reset_index(drop=True)
 
     positions = well_df[["X_UTME", "Y_UTMN"]].values
 
@@ -71,7 +71,7 @@ def get_well_polyline(
     color,
     tooltip,
 ):
-    """ Create polyline data - contains well trajectory, color and tooltip """
+    """Create polyline data - contains well trajectory, color and tooltip"""
 
     positions = get_position_data(well_dataframe, md_start, md_end)
 
