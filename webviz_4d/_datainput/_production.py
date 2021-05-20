@@ -145,7 +145,7 @@ def make_new_well_layer(
                         stop_date = max(gi_stop_date, wi_stop_date)
                     else:
                         stop_date = None
-                    
+
                     if interval_wi_volume and interval_gi_volume:
                         fluid = "wag"
                         fluid_code = fluid + "_injection"
