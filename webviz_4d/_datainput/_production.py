@@ -140,19 +140,36 @@ def make_new_well_layer(
 
                 if gi_start_date and wi_start_date:
                     start_date = min(gi_start_date, wi_start_date)
-                    stop_date = max(gi_start_date, wi_start_date)
-                    fluid = "wag"
-                    fluid_code = fluid + "_injection"
-                    interval_volume = 1
-                    total_volume = 1
-                elif gi_start_date:
+
+                    if gi_stop_date and wi_stop_date:
+                        stop_date = max(gi_stop_date, wi_stop_date)
+                    else:
+                        stop_date = None
+                    
+                    if interval_wi_volume and interval_gi_volume:
+                        fluid = "wag"
+                        fluid_code = fluid + "_injection"
+                        interval_volume = 1
+                        total_volume = 1
+                    elif interval_gi_volume and interval_gi_volume > 0:
+                        fluid = "gas"
+                        fluid_code = fluid + "_injection"
+                        interval_volume = interval_gi_volume
+                        total_volume = total_gi_volume
+                    elif interval_wi_volume and interval_wi_volume > 0:
+                        fluid = "water"
+                        fluid_code = fluid + "_injection"
+                        interval_volume = interval_wi_volume
+                        total_volume = total_wi_volume
+
+                elif gi_start_date and interval_gi_volume:
                     start_date = gi_start_date
                     stop_date = gi_stop_date
                     fluid = "gas"
                     fluid_code = fluid + "_injection"
                     interval_volume = interval_gi_volume
                     total_volume = total_gi_volume
-                elif wi_start_date:
+                elif wi_start_date and interval_wi_volume:
                     start_date = wi_start_date
                     stop_date = wi_stop_date
                     fluid = "water"
