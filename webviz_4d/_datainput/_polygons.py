@@ -11,7 +11,7 @@ import webviz_4d._datainput.common as common
 
 
 def get_fault_position_data(polyline):
-    """ Return x- and y-values for a selected polygon """
+    """Return x- and y-values for a selected polygon"""
 
     positions_txt = polyline["coordinates"]
     positions = json.loads(positions_txt)
@@ -20,7 +20,7 @@ def get_fault_position_data(polyline):
 
 
 def get_fault_polyline(fault):
-    """ Extract polyline data - fault polylines, color and tooltip """
+    """Extract polyline data - fault polylines, color and tooltip"""
     color = "white"
 
     """ Extract polyline data - fault polyline, color and tooltip """
@@ -39,7 +39,7 @@ def get_fault_polyline(fault):
 
 
 def get_owc_polyline(contact):
-    """ Extract polyline data - owc polyline, color and tooltip """
+    """Extract polyline data - owc polyline, color and tooltip"""
     color = "darkgray"
     data = []
     tooltip = "Initial OWC"

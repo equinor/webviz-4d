@@ -16,7 +16,7 @@ defaults = {
 
 
 def read_config(config_file):
-    """ Return the content of a configuration file as a dict """
+    """Return the content of a configuration file as a dict"""
     config_dict = {}
 
     with open(config_file, "r") as stream:
@@ -26,7 +26,7 @@ def read_config(config_file):
 
 
 def get_config_item(config, key):
-    """ Get the value of a SurfaceViewer4D key """
+    """Get the value of a SurfaceViewer4D key"""
     value = None
 
     pages = config["pages"]
@@ -61,7 +61,7 @@ def get_interval(date_string):
 
 
 def find_files(folder, suffix) -> io.BytesIO:
-    """ Return a sorted list of all files in a folder with a specified suffix  """
+    """Return a sorted list of all files in a folder with a specified suffix"""
     return io.BytesIO(
         json.dumps(
             sorted([str(filename) for filename in Path(folder).glob(f"*{suffix}")])
@@ -70,7 +70,7 @@ def find_files(folder, suffix) -> io.BytesIO:
 
 
 def convert_date(date):
-    """ Convert between dates with or without hyphen """
+    """Convert between dates with or without hyphen"""
     date_string = date
 
     if len(date) == 8:
@@ -112,7 +112,7 @@ def get_update_dates(welldata, productiondata):
 
 
 def get_position_data(well_dataframe, md_start):
-    """ Return x- and y-values for a well after a given depth """
+    """Return x- and y-values for a well after a given depth"""
     well_dataframe = well_dataframe[well_dataframe["MD"] > md_start]
     positions = well_dataframe[["X_UTME", "Y_UTMN"]].values
 
@@ -147,7 +147,7 @@ def get_plot_label(configuration, interval):
 
 
 def get_well_colors(settings):
-    """ Return well colors from a configuration """
+    """Return well colors from a configuration"""
 
     return settings["well_colors"]
 
