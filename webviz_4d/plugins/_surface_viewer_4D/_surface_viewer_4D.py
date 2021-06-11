@@ -60,8 +60,17 @@ class SurfaceViewer4D(WebvizPluginABC):
         super().__init__()
         self.shared_settings = app.webviz_settings["shared_settings"]
         self.fmu_directory = self.shared_settings["fmu_directory"]
-        self.basic_well_layers = self.shared_settings["basic_well_layers"]
-        self.additional_well_layers = self.shared_settings["additional_well_layers"]
+
+        try:
+            self.basic_well_layers = self.shared_settings["basic_well_layers"]
+        except:
+            self.basic_well_layers = None
+
+        try:
+            self.additional_well_layers = self.shared_settings["additional_well_layers"]
+        except:
+            self.additional_well_layers = None
+
         self.map_suffix = map_suffix
         self.delimiter = delimiter
         self.interval_mode = interval_mode
@@ -81,6 +90,29 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.selected_realizations = [None, None, None]
         self.well_base_layers = []
         self.interval_well_layers = {}
+
+        # Define well layers
+        default_basic_well_layers = {
+            "drilled_wells": "Drilled wells",
+            "reservoir_section": "Reservoir sections",
+            "active_production": "Current producers",
+            "active_injection": "Current injectors",
+        }
+
+        if self.basic_well_layers is None:
+            self.basic_well_layers = default_basic_well_layers
+
+        default_additional_well_layers = {
+            "production": "Producers",
+            "production_start": "Producers - started",
+            "production_completed": "Producers - completed",
+            "injection": "Injectors",
+            "injection_start": "Injectors - started",
+            "injection_completed": "Injectors - completed",
+        }
+
+        if self.additional_well_layers is None:
+            self.additional_well_layers = default_additional_well_layers
 
         # Read production data
         self.prod_names = ["BORE_OIL_VOL.csv", "BORE_GI_VOL.csv", "BORE_WI_VOL.csv"]
