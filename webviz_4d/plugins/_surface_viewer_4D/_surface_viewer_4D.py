@@ -60,6 +60,10 @@ class SurfaceViewer4D(WebvizPluginABC):
         super().__init__()
         self.shared_settings = app.webviz_settings["shared_settings"]
         self.fmu_directory = self.shared_settings["fmu_directory"]
+
+        self.basic_well_layers = self.shared_settings.get("basic_well_layers", None)
+        self.additional_well_layers = self.shared_settings.get("additional_well_layers")
+
         self.map_suffix = map_suffix
         self.delimiter = delimiter
         self.interval_mode = interval_mode
@@ -70,7 +74,6 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.wellsuffix = ".w"
 
         self.surface_layer = None
-        self.well_base_layers = None
         self.attribute_settings = {}
         self.well_update = ""
         self.production_update = ""
@@ -80,6 +83,29 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.selected_realizations = [None, None, None]
         self.well_base_layers = []
         self.interval_well_layers = {}
+
+        # Define well layers
+        default_basic_well_layers = {
+            "drilled_wells": "Drilled wells",
+            "reservoir_section": "Reservoir sections",
+            "active_production": "Current producers",
+            "active_injection": "Current injectors",
+        }
+
+        if self.basic_well_layers is None:
+            self.basic_well_layers = default_basic_well_layers
+
+        default_additional_well_layers = {
+            "production": "Producers",
+            "production_start": "Producers - started",
+            "production_completed": "Producers - completed",
+            "injection": "Injectors",
+            "injection_start": "Injectors - started",
+            "injection_completed": "Injectors - completed",
+        }
+
+        if self.additional_well_layers is None:
+            self.additional_well_layers = default_additional_well_layers
 
         # Read production data
         self.prod_names = ["BORE_OIL_VOL.csv", "BORE_GI_VOL.csv", "BORE_WI_VOL.csv"]
@@ -176,7 +202,7 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         self.colors = get_well_colors(self.config)
 
-        # Read custom colormaps
+        # Load polygons
         self.polygons_folder = polygons_folder
         self.polygon_layers = None
         if self.polygons_folder is not None:
@@ -190,6 +216,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         # Read update dates and well data
         #    self.drilled_wells_df: dataframe with wellpaths (x- and y positions) for all drilled wells
         #    self.drilled_wells_info: dataframe with metadata for all drilled wells
+
         self.wellfolder = wellfolder
         print("Reading well data from", self.wellfolder)
 
@@ -228,38 +255,34 @@ class SurfaceViewer4D(WebvizPluginABC):
             interval = self.selected_intervals[0]
 
             # Create well layers for the layers that are independent of the selected 4D interval
+
             if self.drilled_wells_df is not None:
-                basic_well_layers = {
-                    "drilled_wells": "Drilled wells",
-                    "reservoir_section": "Reservoir sections",
-                    "active_production": "Active producers",
-                    "active_injection": "Active injectors",
-                }
+                for key, value in self.basic_well_layers.items():
+                    if value is not None:
+                        if "production" in key:
+                            fluids = ["oil"]
+                        elif "injection" in key:
+                            fluids = ["gas", "water"]
+                        else:
+                            fluids = []
 
-                for key, value in basic_well_layers.items():
-                    if "production" in key:
-                        fluids = ["oil"]
-                    elif "injection" in key:
-                        fluids = ["gas", "water"]
-                    else:
-                        fluids = []
+                        print("Creating well layer for", value)
+                        well_layer = make_new_well_layer(
+                            interval,
+                            self.drilled_wells_df,
+                            self.drilled_wells_info,
+                            self.prod_data,
+                            self.colors,
+                            selection=key,
+                            fluids=fluids,
+                            label=value,
+                        )
 
-                    print("Creating well layer for", value)
-                    well_layer = make_new_well_layer(
-                        interval,
-                        self.drilled_wells_df,
-                        self.drilled_wells_info,
-                        self.prod_data,
-                        self.colors,
-                        selection=key,
-                        fluids=fluids,
-                        label=value,
-                    )
-
-                    if well_layer is not None:
-                        self.well_base_layers.append(well_layer)
+                        if well_layer is not None:
+                            self.well_base_layers.append(well_layer)
 
             # Load wellpaths for planned wells and create planned well layers
+
             try:
                 planned_well_df = self.all_wells_df.loc[
                     self.all_wells_df["layer_name"] != "Drilled wells"
@@ -291,14 +314,6 @@ class SurfaceViewer4D(WebvizPluginABC):
                     )
 
             # Create production and injection layers for the default interval
-            self.additional_well_layers = {
-                "production": "Producers",
-                "production_start": "Producers - started",
-                "production_completed": "Producers - completed",
-                "injection": "Injectors",
-                "injection_start": "Injectors - started",
-                "injection_completed": "Injectors - completed",
-            }
 
             self.interval_well_layers = self.create_additional_well_layers(interval)
 
@@ -460,26 +475,27 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         if get_dates(interval)[0] <= self.production_update:
             for key, value in self.additional_well_layers.items():
-                if "production" in key:
-                    fluids = ["oil"]
-                elif "injection" in key:
-                    fluids = ["gas", "water"]
-                else:
-                    fluids = []
+                if value is not None:
+                    if "production" in key:
+                        fluids = ["oil"]
+                    elif "injection" in key:
+                        fluids = ["gas", "water"]
+                    else:
+                        fluids = []
 
-                well_layer = make_new_well_layer(
-                    interval,
-                    self.drilled_wells_df,
-                    self.drilled_wells_info,
-                    self.prod_data,
-                    self.colors,
-                    selection=key,
-                    fluids=fluids,
-                    label=value,
-                )
+                    well_layer = make_new_well_layer(
+                        interval,
+                        self.drilled_wells_df,
+                        self.drilled_wells_info,
+                        self.prod_data,
+                        self.colors,
+                        selection=key,
+                        fluids=fluids,
+                        label=value,
+                    )
 
-                if well_layer is not None:
-                    interval_well_layers.append(well_layer)
+                    if well_layer is not None:
+                        interval_well_layers.append(well_layer)
 
         return interval_well_layers
 

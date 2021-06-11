@@ -251,7 +251,7 @@ def extract_production_info(pdm_well_name, prod_data, interval, production_type,
     total_volume = None
 
     headers = prod_data.columns
-    first_date = common.get_dates(headers[6])[0]
+    first_date = common.get_dates(headers[5])[0]
     try:
         well_prod_info = prod_data.loc[
             (prod_data["PDM well name"] == pdm_well_name)
