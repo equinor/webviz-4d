@@ -26,8 +26,8 @@ setup(
     },
     install_requires=[
         "webviz-config>=0.0.24",
-        "xtgeo~=2.1",
-        "pillow~=7.1.0",
+        "xtgeo>=2.14",
+        "pillow=>7.1.0",
         "webviz-subsurface-components>=0.0.3",
     ],
     tests_require=TESTS_REQUIRE,
