@@ -61,15 +61,8 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.shared_settings = app.webviz_settings["shared_settings"]
         self.fmu_directory = self.shared_settings["fmu_directory"]
 
-        try:
-            self.basic_well_layers = self.shared_settings["basic_well_layers"]
-        except:
-            self.basic_well_layers = None
-
-        try:
-            self.additional_well_layers = self.shared_settings["additional_well_layers"]
-        except:
-            self.additional_well_layers = None
+        self.basic_well_layers = self.shared_settings.get("basic_well_layers", None)
+        self.additional_well_layers = self.shared_settings.get("additional_well_layers")
 
         self.map_suffix = map_suffix
         self.delimiter = delimiter
