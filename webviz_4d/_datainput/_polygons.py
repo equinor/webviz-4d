@@ -19,9 +19,8 @@ def get_fault_position_data(polyline):
     return positions
 
 
-def get_fault_polyline(fault):
-    """Extract polyline data - fault polylines, color and tooltip"""
-    color = "white"
+def get_fault_polyline(fault, color):
+    """Create polyline data - fault polylines, color and tooltip"""
 
     """ Extract polyline data - fault polyline, color and tooltip """
 
@@ -38,9 +37,8 @@ def get_fault_polyline(fault):
         }
 
 
-def get_owc_polyline(contact):
-    """Extract polyline data - owc polyline, color and tooltip"""
-    color = "darkgray"
+def get_owc_polyline(contact, color):
+    """Create polyline data - owc polyline, color and tooltip"""
     data = []
     tooltip = "Initial OWC"
 
@@ -63,18 +61,18 @@ def get_owc_polyline(contact):
     return data
 
 
-def make_new_polyline_layer(dataframe, label):
+def make_new_polyline_layer(dataframe, label, color):
     """Make layeredmap fault layer"""
     data = []
 
     if label == "Faults":
         for _index, row in dataframe.iterrows():
-            polyline_data = get_fault_polyline(row)
+            polyline_data = get_fault_polyline(row, color)
 
             if polyline_data:
                 data.append(polyline_data)
     elif label == "OWC":
-        data = get_owc_polyline(dataframe)
+        data = get_owc_polyline(dataframe, color)
 
     if data:
         layer = {"name": label, "checked": True, "base_layer": False, "data": data}
@@ -84,19 +82,26 @@ def make_new_polyline_layer(dataframe, label):
     return layer
 
 
-def load_polygons(csv_files):
+def load_polygons(csv_files, polygon_colors):
     polygon_layers = []
 
     supported_polygons = {"owc_outline": "OWC", "faults": "Faults"}
+    default_colors = {"owc_outline": "darkgray", "faults": "white"}
 
     for csv_file in csv_files:
         polygon_df = pd.read_csv(csv_file)
         name = polygon_df["name"].unique()[0]
         if name in supported_polygons.keys():
 
-            label = supported_polygons[name]
+            label = supported_polygons.get(name)
+            default_color = default_colors.get(name)
 
-            polygon_layer = make_new_polyline_layer(polygon_df, label)
+            if polygon_colors:
+                color = polygon_colors.get(name, default_color)
+            else:
+                color = default_color
+
+            polygon_layer = make_new_polyline_layer(polygon_df, label, color)
             polygon_layers.append(polygon_layer)
 
     return polygon_layers

@@ -211,7 +211,8 @@ class SurfaceViewer4D(WebvizPluginABC):
                 for fn in json.load(find_files(self.polygons_folder, ".csv"))
             ]
             print("Reading polygons from:", self.polygons_folder)
-            self.polygon_layers = load_polygons(self.polygon_files)
+            polygon_colors = self.config.get("polygon_colors")
+            self.polygon_layers = load_polygons(self.polygon_files, polygon_colors)
 
         # Read update dates and well data
         #    self.drilled_wells_df: dataframe with wellpaths (x- and y positions) for all drilled wells
