@@ -63,6 +63,8 @@ def make_new_well_layer(
     # convert the set to the list
     unique_wellbores = sorted(list(list_set))
 
+    prod_type_txt = {"production": "prod", "injection": "inj"}
+
     for wellbore in unique_wellbores:
         status = False
         md_start = 0
@@ -217,7 +219,8 @@ def make_new_well_layer(
                         elif selection == "production" or selection == "injection":
                             status = True
             if status:
-                tooltip = short_name + ": " + prod_type + " (" + str(info) + ")"
+                txt = prod_type_txt.get(prod_type, prod_type)
+                tooltip = short_name + ": " + txt + " (" + str(info) + ")"
 
         polyline_data = False
 
@@ -301,19 +304,21 @@ def get_info(start_date, stop_date, fluid, volume):
     unit = units.get(fluid)
 
     if stop_date is None or (not isinstance(stop_date, str) and math.isnan(stop_date)):
-        stop_date = "---"
+        stop_date_txt = "---"
+    else:
+        stop_date_txt = stop_date[:4]
 
     if fluid == "wag":
-        info = "(WAG) Start:" + str(start_date) + " Last: " + str(stop_date)
+        info = "(WAG) Start:" + str(start_date[:4]) + " Last: " + str(stop_date_txt)
     else:
         info = (
             fluid
             + " {:.0f} ".format(volume)
             + unit
             + " Start: "
-            + str(start_date)
+            + str(start_date[:4])
             + " Last: "
-            + str(stop_date)
+            + str(stop_date_txt)
         )
 
     return info
