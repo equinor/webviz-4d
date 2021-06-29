@@ -2,6 +2,7 @@ from typing import List, Tuple, Callable
 from pathlib import Path
 import json
 import os
+import numpy as np
 
 from webviz_config import WebvizPluginABC
 from webviz_4d._datainput._surface import make_surface_layer, load_surface
@@ -406,6 +407,8 @@ class SurfaceViewer4D(WebvizPluginABC):
         else:
             time1 = selected_interval[0:10]
             time2 = selected_interval[11:]
+
+        self.surface_metadata.replace(np.nan, "", inplace=True)
 
         try:
             selected_metadata = self.surface_metadata[
