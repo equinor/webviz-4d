@@ -124,9 +124,13 @@ def set_layout(parent):
     return html.Div(
         id=parent.uuid("layout"),
         children=[
-            html.H3("WebViz-4D " + parent.fmu_directory),
-            html.H6("Well data update: " + parent.well_update),
-            html.H6("Production data update: " + parent.production_update),
+            html.H6("WebViz-4D " + parent.fmu_directory),
+            html.H6(
+                "Well data update: "
+                + parent.well_update
+                + "  Production data update: "
+                + parent.production_update
+            ),
             wcc.FlexBox(
                 style={"fontSize": "1rem"},
                 children=[
