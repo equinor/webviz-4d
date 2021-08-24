@@ -61,6 +61,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         super().__init__()
         self.shared_settings = app.webviz_settings["shared_settings"]
         self.fmu_directory = self.shared_settings["fmu_directory"]
+        self.label = self.shared_settings.get("label", self.fmu_directory)
 
         self.basic_well_layers = self.shared_settings.get("basic_well_layers", None)
         self.additional_well_layers = self.shared_settings.get("additional_well_layers")
@@ -143,16 +144,16 @@ class SurfaceViewer4D(WebvizPluginABC):
             print("Colormaps settings loaded from file", self.attribute_maps_file)
 
         # Read settings
-        self.settings = settings
-        if self.settings:
-            self.config = read_config(get_path(path=self.settings))
+        self.settings_path = settings
 
-            try:
-                self.attribute_settings = self.config["map_settings"][
-                    "attribute_settings"
-                ]
-            except:
-                pass
+        if self.settings_path:
+            self.config = read_config(get_path(path=self.settings_path))
+            self.attribute_settings = None
+            self.delimiter = None
+
+            map_settings = self.config.get("map_settings")
+            self.attribute_settings = map_settings.get("attribute_settings")
+            self.default_colormap = map_settings.get("default_colormap", "seismic")
 
         # Read settings (defaults)
         if default_interval is None:
@@ -380,8 +381,8 @@ class SurfaceViewer4D(WebvizPluginABC):
         for fn in list(self.surface_metadata["filename"]):
             store_functions.append((get_path, [{"path": Path(fn)}]))
 
-        if self.settings is not None:
-            store_functions.append((get_path, [{"path": self.settings}]))
+        if self.settings_path is not None:
+            store_functions.append((get_path, [{"path": self.settings_path}]))
         return store_functions
 
     def ensembles(self, map_number):
@@ -542,7 +543,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                     surface,
                     name=data["attr"],
                     color=attribute_settings.get(data["attr"], {}).get(
-                        "color", "inferno"
+                        "color", self.default_colormap
                     ),
                     min_val=attribute_settings.get(data["attr"], {}).get("min", None),
                     max_val=attribute_settings.get(data["attr"], {}).get("max", None),
