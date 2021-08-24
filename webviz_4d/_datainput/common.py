@@ -90,7 +90,7 @@ def get_update_dates(welldata, productiondata):
             well_meta_data = yaml.safe_load(stream)
 
         well_update = well_meta_data[0]["welldata"]["update_time"]
-        update_dates["well_update_date"] = well_update.strftime("%Y-%m-%d %H:%M:%S")
+        update_dates["well_update_date"] = well_update.strftime("%Y-%m-%d")
     except:
         update_dates["well_update_date"] = ""
     try:
