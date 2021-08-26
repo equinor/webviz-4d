@@ -10,6 +10,11 @@ from webviz_config.common_cache import CACHE
 import webviz_4d._datainput.common as common
 
 
+supported_polygons = {"owc_outline": "OWC", "goc_outline": "GOC", "faults": "Faults"}
+default_colors = {"owc_outline": "darkgray", "goc_outline": "red", "faults": "white"}
+contact_tooltips = {"OWC": "Initial OWC", "GOC": "Initial GOC"}
+
+
 def get_fault_position_data(polyline):
     """Return x- and y-values for a selected polygon"""
 
@@ -37,10 +42,10 @@ def get_fault_polyline(fault, color):
         }
 
 
-def get_owc_polyline(contact, color):
+def get_contact_polyline(contact, label, color):
     """Create polyline data - owc polyline, color and tooltip"""
     data = []
-    tooltip = "Initial OWC"
+    tooltip = contact_tooltips[label]
 
     coordinates_txt = contact["coordinates"][0]
     coordinates = json.loads(coordinates_txt)
@@ -71,8 +76,8 @@ def make_new_polyline_layer(dataframe, label, color):
 
             if polyline_data:
                 data.append(polyline_data)
-    elif label == "OWC":
-        data = get_owc_polyline(dataframe, color)
+    elif label in contact_tooltips.keys():
+        data = get_contact_polyline(dataframe, label, color)
 
     if data:
         layer = {"name": label, "checked": True, "base_layer": False, "data": data}
@@ -84,9 +89,6 @@ def make_new_polyline_layer(dataframe, label, color):
 
 def load_polygons(csv_files, polygon_colors):
     polygon_layers = []
-
-    supported_polygons = {"owc_outline": "OWC", "faults": "Faults"}
-    default_colors = {"owc_outline": "darkgray", "faults": "white"}
 
     for csv_file in csv_files:
         polygon_df = pd.read_csv(csv_file)

@@ -121,16 +121,15 @@ def ensemble_layout(
 
 
 def set_layout(parent):
+    update_txt = "Well data update: " + parent.well_update
+    if parent.production_update != "":
+        update_txt = (
+            update_txt + "  Production data update: " + parent.production_update
+        )
     return html.Div(
         id=parent.uuid("layout"),
         children=[
-            html.H6("WebViz-4D " + parent.fmu_directory),
-            html.H6(
-                "Well data update: "
-                + parent.well_update
-                + "  Production data update: "
-                + parent.production_update
-            ),
+            html.H6("WebViz-4D " + parent.label),
             wcc.FlexBox(
                 style={"fontSize": "1rem"},
                 children=[
@@ -304,5 +303,6 @@ def set_layout(parent):
                     ),
                 ],
             ),
+            html.H6(update_txt),
         ],
     )
