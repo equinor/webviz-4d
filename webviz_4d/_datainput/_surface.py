@@ -2,7 +2,7 @@ import math
 import numpy as np
 import numpy.ma as ma
 
-from xtgeo import RegularSurface
+import xtgeo
 from webviz_config.common_cache import CACHE
 
 from .image_processing import array_to_png, get_colormap
@@ -10,7 +10,7 @@ from .image_processing import array_to_png, get_colormap
 
 @CACHE.memoize(timeout=CACHE.TIMEOUT)
 def load_surface(surface_path):
-    return RegularSurface(surface_path)
+    return xtgeo.surface_from_file(surface_path)
 
 
 @CACHE.memoize(timeout=CACHE.TIMEOUT)
