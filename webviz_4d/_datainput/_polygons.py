@@ -11,7 +11,11 @@ import webviz_4d._datainput.common as common
 
 
 supported_polygons = {"owc_outline": "OWC", "goc_outline": "GOC", "faults": "Faults"}
-default_colors = {"owc_outline": "darkgray", "goc_outline": "red", "faults": "white"}
+default_colors = {
+    "owc_outline": "lightslategray",
+    "goc_outline": "red",
+    "faults": "gray",
+}
 contact_tooltips = {"OWC": "Initial OWC", "GOC": "Initial GOC"}
 
 
