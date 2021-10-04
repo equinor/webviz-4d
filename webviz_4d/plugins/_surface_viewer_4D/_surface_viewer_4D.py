@@ -505,7 +505,6 @@ class SurfaceViewer4D(WebvizPluginABC):
         return interval_well_layers
 
     def make_map(self, data, ensemble, real, attribute_settings, map_idx):
-        statistical_maps = ["max", "mean", "min", "p10", "p50", "p90", "std"]
         data = json.loads(data)
 
         attribute_settings = json.loads(attribute_settings)
@@ -538,7 +537,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                     & (m_data["realization"] == real)
                 ]
 
-                metadata = selected_data[["colormap", "lower_limit", "upper_limit"]]
+                metadata = selected_data[["lower_limit", "upper_limit"]]
             else:
                 metadata = None
 
