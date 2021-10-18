@@ -130,7 +130,7 @@ def load_zone_polygons(csv_files, polygon_colors):
         polygon_df = pd.read_csv(csv_file)
         label = os.path.basename(csv_file).replace(".csv", "")
 
-        name = "Faults"
+        name = "faults"
         default_color = default_colors.get(name)
 
         if polygon_colors:
