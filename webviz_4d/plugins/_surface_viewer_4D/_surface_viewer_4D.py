@@ -555,9 +555,11 @@ class SurfaceViewer4D(WebvizPluginABC):
                     (m_data["attribute"] == data["attr"])
                     & (m_data["interval"] == interval)
                     & (m_data["realization"] == real)
+                    & (m_data["name"] == selected_zone)
                 ]
 
                 metadata = selected_data[["lower_limit", "upper_limit"]]
+
             else:
                 metadata = None
 
