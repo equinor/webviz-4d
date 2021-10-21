@@ -309,7 +309,7 @@ def get_info(start_date, stop_date, fluid, volume):
         stop_date_txt = stop_date[:4]
 
     if fluid == "wag":
-        info = "(WAG) Start:" + str(start_date[:4]) + " Last: " + str(stop_date_txt)
+        info = "(WAG) Start: " + str(start_date[:4]) + " Last: " + str(stop_date_txt)
     else:
         info = (
             fluid

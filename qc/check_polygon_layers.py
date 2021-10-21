@@ -1,5 +1,7 @@
 import os
+import io
 import json
+import pandas as pd
 from pathlib import Path
 import argparse
 
@@ -13,7 +15,13 @@ from webviz_4d._datainput.common import (
     read_config,
 )
 
-from webviz_4d._datainput._polygons import load_polygons
+from webviz_4d._datainput._polygons import (
+    load_polygons,
+    load_zone_polygons,
+    make_new_polyline_layer,
+    get_zone_layer,
+)
+
 from webviz_4d.plugins._surface_viewer_4D._webvizstore import (
     read_csv,
     read_csvs,
@@ -56,3 +64,23 @@ for layer in polygon_layers:
 
     ind = ind + 1
     print("")
+
+# Read zone polygons if existing
+zone_faults_folder = Path(os.path.join(polygon_folder, "rms"))
+
+zone_faults_files = [
+    get_path(Path(fn)) for fn in json.load(find_files(zone_faults_folder, ".csv"))
+]
+
+print("Reading polygons from:", zone_faults_folder)
+polygon_layers = load_zone_polygons(zone_faults_files, polygon_colors)
+
+zones = ["ile6_3", "tilje34_33", "dummy"]
+
+for zone in zones:
+    layer = get_zone_layer(polygon_layers, zone)
+
+    if layer:
+        print("Zone", zone, "found")
+    else:
+        print("Zone", zone, "not found")

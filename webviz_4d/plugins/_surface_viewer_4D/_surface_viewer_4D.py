@@ -19,7 +19,11 @@ from webviz_4d._datainput._production import make_new_well_layer
 
 from webviz_4d._private_plugins.surface_selector import SurfaceSelector
 from webviz_4d._datainput._colormaps import load_custom_colormaps
-from webviz_4d._datainput._polygons import load_polygons
+from webviz_4d._datainput._polygons import (
+    load_polygons,
+    load_zone_polygons,
+    get_zone_layer,
+)
 
 from webviz_4d._datainput._metadata import (
     get_map_defaults,
@@ -207,6 +211,8 @@ class SurfaceViewer4D(WebvizPluginABC):
         # Load polygons
         self.polygons_folder = polygons_folder
         self.polygon_layers = None
+        self.zone_polygon_layers = None
+
         if self.polygons_folder is not None:
             self.polygon_files = [
                 get_path(Path(fn))
@@ -215,6 +221,18 @@ class SurfaceViewer4D(WebvizPluginABC):
             print("Reading polygons from:", self.polygons_folder)
             polygon_colors = self.config.get("polygon_colors")
             self.polygon_layers = load_polygons(self.polygon_files, polygon_colors)
+
+            # Load zone fault if existing
+            zone_faults_folder = Path(os.path.join(self.polygons_folder, "rms"))
+            zone_faults_files = [
+                get_path(Path(fn))
+                for fn in json.load(find_files(zone_faults_folder, ".csv"))
+            ]
+
+            print("Reading zone polygons from:", zone_faults_folder)
+            self.zone_polygon_layers = load_zone_polygons(
+                zone_faults_files, polygon_colors
+            )
 
         # Read update dates and well data
         #    self.drilled_wells_df: dataframe with wellpaths (x- and y positions) for all drilled wells
@@ -507,6 +525,8 @@ class SurfaceViewer4D(WebvizPluginABC):
     def make_map(self, data, ensemble, real, attribute_settings, map_idx):
         data = json.loads(data)
 
+        selected_zone = data.get("name")
+
         attribute_settings = json.loads(attribute_settings)
         map_type = self.map_defaults[map_idx]["map_type"]
 
@@ -535,9 +555,11 @@ class SurfaceViewer4D(WebvizPluginABC):
                     (m_data["attribute"] == data["attr"])
                     & (m_data["interval"] == interval)
                     & (m_data["realization"] == real)
+                    & (m_data["name"] == selected_zone)
                 ]
 
                 metadata = selected_data[["lower_limit", "upper_limit"]]
+
             else:
                 metadata = None
 
@@ -556,8 +578,18 @@ class SurfaceViewer4D(WebvizPluginABC):
                 )
             ]
 
+            # Check if there are polygon layers available for the selected zone
             for polygon_layer in self.polygon_layers:
-                surface_layers.append(polygon_layer)
+                layer_name = polygon_layer["name"]
+                layer = polygon_layer
+
+                if layer_name == "Faults":
+                    zone_layer = get_zone_layer(self.zone_polygon_layers, selected_zone)
+
+                    if zone_layer:
+                        layer = zone_layer
+
+                surface_layers.append(layer)
 
             if self.well_base_layers:
                 for well_layer in self.well_base_layers:
