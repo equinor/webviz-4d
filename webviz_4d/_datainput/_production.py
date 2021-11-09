@@ -296,7 +296,7 @@ def extract_production_info(pdm_well_name, prod_data, interval, production_type,
 
 
 def get_info(start_date, stop_date, fluid, volume):
-    units = {"oil": "[kSm3]", "water": "[kSm3]", "gas": "[MSm3]"}
+    units = {"oil": "[kSm3]", "water": "[km3]", "gas": "[MSm3]"}
 
     if volume is None or volume == 0:
         return None
