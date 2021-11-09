@@ -445,6 +445,8 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         except:
             path = ""
+            print("WARNING: selected map not found. Selection criteria are:")
+            print(map_type, real, ensemble, name, attribute, time1, time2)
 
         return path
 
@@ -614,7 +616,6 @@ class SurfaceViewer4D(WebvizPluginABC):
 
             heading, sim_info, label = self.get_heading(map_idx, self.observations)
         else:
-            print("WARNING: File", surface_file, "doesn't exist")
             heading = "Selected map doesn't exist"
             sim_info = "-"
             surface_layers = []
