@@ -1,9 +1,7 @@
 import os
-import numpy as np
-import pandas as pd
 from pathlib import Path
 import argparse
-from datetime import datetime
+import pandas as pd
 
 from webviz_4d._datainput._production import make_new_well_layer
 from webviz_4d.plugins._surface_viewer_4D._webvizstore import (
@@ -19,6 +17,7 @@ from webviz_4d._datainput.well import load_all_wells
 
 
 def get_incremental_intervals(prod_df):
+    """Extract the incremental 4D intervals from a production table"""
     columns = list(prod_df)
     start_columns = columns[0:6]
     incremental_df = prod_df[start_columns].copy()
@@ -37,54 +36,11 @@ def get_incremental_intervals(prod_df):
     return incremental_df
 
 
-def extract_volumes(well_volumes, intervals, fluid, prod_type):
-    try:
-        total_volume = well_volumes[
-            (well_volumes["Fluid"] == fluid)
-            & (well_volumes["Production type"] == prod_type)
-        ][intervals[-1]].values[0]
-    except:
-        total_volume = None
-
-    return total_volume
-
-
-def get_production_summary(well_volumes, intervals):
-    start_date = min(well_volumes["Start date"].values)
-    last_dates = well_volumes["Last date"].values
-    last_date = None
-
-    if len(last_dates) == 1:
-        last_date = well_volumes["Last date"].values[0]
-    else:
-        try:
-            last_date = max(well_volumes["Last date"].values)
-        except:
-            last_date = None
-
-    total_oil_volume = extract_volumes(well_volumes, intervals, "oil", "production")
-    total_gas_volume = extract_volumes(well_volumes, intervals, "gas", "production")
-    total_water_volume = extract_volumes(well_volumes, intervals, "water", "production")
-    total_gi_volume = extract_volumes(well_volumes, intervals, "gas", "injection")
-    total_wi_volume = extract_volumes(well_volumes, intervals, "water", "injection")
-
-    summary = {
-        "start_date": start_date,
-        "last_date": last_date,
-        "total_oil_volume": total_oil_volume,
-        "total_gas_volume": total_gas_volume,
-        "total_water_volume": total_water_volume,
-        "total_gi_volume": total_gi_volume,
-        "total_wi_volume": total_wi_volume,
-    }
-
-    return summary
-
-
 # Main program
 def main():
-    DESCRIPTION = "Create information about the well layers in WebViz-4D"
-    parser = argparse.ArgumentParser(description=DESCRIPTION)
+    """Create information about the well layers in WebViz-4D"""
+    description = "Create information about the well layers in WebViz-4D"
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument("settings_file", help="Enter name of settings file")
     parser.add_argument("interval", help="Enter wanted 4D interval")
     args = parser.parse_args()
@@ -130,9 +86,7 @@ def main():
             lambda x: get_path(Path(x))
         )
         all_wells_df = load_all_wells(all_wells_info)
-        drilled_wells_files = list(
-            all_wells_info[all_wells_info["layer_name"] == "Drilled wells"]["file_name"]
-        )
+
         drilled_wells_df = all_wells_df.loc[
             all_wells_df["layer_name"] == "Drilled wells"
         ]
@@ -202,7 +156,10 @@ def main():
         selection = key
         value = drilled_well_layers[key]
 
-        if "production" in selection or "injection" in selection:
+        if "active" in selection:
+            fluids = fluids_dict[selection]
+            interval_label = ""
+        elif "production" in selection or "injection" in selection:
             fluids = fluids_dict[selection]
             interval_label = "_" + selected_interval
         else:
@@ -268,17 +225,7 @@ def main():
 
             fluid = fluid.replace("(", "").replace(")", "")
             color = item["color"]
-            # print(
-            #     index,
-            #     short_name,
-            #     well_type,
-            #     fluids,
-            #     volume,
-            #     unit,
-            #     start_year,
-            #     last_year,
-            #     color,
-            # )
+
             index = index + 1
 
             short_names.append(short_name)
@@ -311,13 +258,13 @@ def main():
         layer_df.to_csv(outfile, index=False)
         print("List of wells in layer", selection, "stored in:", outfile)
 
-    SELECTION = "planned"
+    selection = "planned"
     fluids = []
 
     for key in planned_well_layers:
         value = key
 
-        print("\n" + SELECTION, value)
+        print("\n" + selection, value)
 
         well_layer = make_new_well_layer(
             interval,
@@ -325,7 +272,7 @@ def main():
             planned_wells_info,
             prod_data,
             well_colors,
-            selection=SELECTION,
+            selection=selection,
             fluids=fluids,
             label=value,
         )

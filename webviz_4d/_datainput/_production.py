@@ -1,11 +1,12 @@
 import math
 import pandas as pd
 
-import webviz_4d._datainput.common as common
+from webviz_4d._datainput import common
 from webviz_4d._datainput.well import get_well_polyline
 
 
 def get_production_type(selection):
+    """Get production type from a selection string"""
     if "production" in selection:
         production_type = "production"
     elif "injection" in selection:
@@ -29,13 +30,16 @@ def check_interval(interval):
 
 
 def get_value(metadata_df, item, mode):
+    """Extract a value from dataframe given the column name name and a mode option:
+    - mode = "min" => minimum value in the column
+    - mode = int => index of item in the column"""
     try:
         values = metadata_df[item].values
 
         if isinstance(mode, str) and mode == "min":
             value = min(values)
         elif isinstance(mode, int) and mode < len(values):
-            value = values[0]
+            value = values[mode]
         else:
             return None
     except:
@@ -164,14 +168,14 @@ def make_new_well_layer(
                         interval_volume = interval_wi_volume
                         total_volume = total_wi_volume
 
-                elif gi_start_date and interval_gi_volume:
+                elif gi_start_date and (interval_gi_volume or total_gi_volume):
                     start_date = gi_start_date
                     stop_date = gi_stop_date
                     fluid = "gas"
                     fluid_code = fluid + "_injection"
                     interval_volume = interval_gi_volume
                     total_volume = total_gi_volume
-                elif wi_start_date and interval_wi_volume:
+                elif wi_start_date and (interval_wi_volume or total_wi_volume):
                     start_date = wi_start_date
                     stop_date = wi_stop_date
                     fluid = "water"
@@ -216,7 +220,7 @@ def make_new_well_layer(
                             md_start = top_completion
                             md_end = base_completion
                             status = True
-                        elif selection == "production" or selection == "injection":
+                        elif selection in ["production", "injection"]:
                             status = True
             if status:
                 txt = prod_type_txt.get(prod_type, prod_type)
@@ -256,11 +260,13 @@ def extract_production_info(pdm_well_name, prod_data, interval, production_type,
     headers = prod_data.columns
     first_date = common.get_dates(headers[5])[0]
     try:
-        well_prod_info = prod_data.loc[
+        prod_info = prod_data.loc[
             (prod_data["PDM well name"] == pdm_well_name)
             & (prod_data["Production type"] == production_type)
             & (prod_data["Fluid"] == fluid)
         ]
+
+        well_prod_info = prod_info.where(prod_info.notnull(), None)
 
         start_date = well_prod_info["Start date"].values[0]
         stop_date = well_prod_info["Last date"].values[0]
@@ -286,17 +292,12 @@ def extract_production_info(pdm_well_name, prod_data, interval, production_type,
         if math.isnan(interval_volume) or interval_volume == 0:
             interval_volume = None
 
-        if start_date != start_date:
-            start_date = None
-
-        if stop_date != stop_date:
-            stop_date = None
-
     return start_date, stop_date, interval_volume, total_volume
 
 
 def get_info(start_date, stop_date, fluid, volume):
-    units = {"oil": "[kSm3]", "water": "[km3]", "gas": "[MSm3]"}
+    """Create information string for production/injection wells"""
+    units = {"oil": "[kSm3]", "water": "[Sm3]", "gas": "[MSm3]"}
 
     if volume is None or volume == 0:
         return None
@@ -325,6 +326,7 @@ def get_info(start_date, stop_date, fluid, volume):
 
 
 def check_interval_date(interval, selected_date):
+    """Check if a selected date is included in a 4D interval or not"""
     if selected_date is None or (
         not isinstance(selected_date, str) and math.isnan(selected_date)
     ):
