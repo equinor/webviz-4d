@@ -206,7 +206,10 @@ def make_new_well_layer(
                     if started == "greater" or stopped == "less":
                         interval_status = False
                     else:
-                        interval_status = True
+                        if interval_volume and interval_volume > 0:
+                            interval_status = True
+                        else:
+                            interval_status = False
 
                     if interval_status:
                         color = colors[fluid_code]
@@ -297,7 +300,7 @@ def extract_production_info(pdm_well_name, prod_data, interval, production_type,
 
 def get_info(start_date, stop_date, fluid, volume):
     """Create information string for production/injection wells"""
-    units = {"oil": "[kSm3]", "water": "[Sm3]", "gas": "[MSm3]"}
+    units = {"oil": "[kSm3]", "water": "[km3]", "gas": "[MSm3]"}
 
     if volume is None or volume == 0:
         return None
