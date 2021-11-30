@@ -223,15 +223,16 @@ class SurfaceViewer4D(WebvizPluginABC):
             self.polygon_layers = load_polygons(self.polygon_files, polygon_colors)
 
             # Load zone fault if existing
-            zone_faults_folder = Path(os.path.join(self.polygons_folder, "rms"))
-            zone_faults_files = [
+
+            self.zone_faults_folder = Path(os.path.join(self.polygons_folder, "rms"))
+            self.zone_faults_files = [
                 get_path(Path(fn))
-                for fn in json.load(find_files(zone_faults_folder, ".csv"))
+                for fn in json.load(find_files(self.zone_faults_folder, ".csv"))
             ]
 
-            print("Reading zone polygons from:", zone_faults_folder)
+            print("Reading zone polygons from:", self.zone_faults_folder)
             self.zone_polygon_layers = load_zone_polygons(
-                zone_faults_files, polygon_colors
+                self.zone_faults_files, polygon_colors
             )
 
         # Read update dates and well data
@@ -378,6 +379,14 @@ class SurfaceViewer4D(WebvizPluginABC):
             store_functions.append(
                 (get_path, [{"path": fn} for fn in self.polygon_files])
             )
+
+            store_functions.append(
+                (find_files, [{"folder": self.zone_faults_folder, "suffix": ".csv"}])
+            )
+            store_functions.append(
+                (get_path, [{"path": fn} for fn in self.zone_faults_files])
+            )
+
         if self.selector_file is not None:
             store_functions.append((get_path, [{"path": self.selector_file}]))
         if self.wellfolder is not None:
@@ -445,6 +454,8 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         except:
             path = ""
+            print("WARNING: selected map not found. Selection criteria are:")
+            print(map_type, real, ensemble, name, attribute, time1, time2)
 
         return path
 
@@ -614,7 +625,6 @@ class SurfaceViewer4D(WebvizPluginABC):
 
             heading, sim_info, label = self.get_heading(map_idx, self.observations)
         else:
-            print("WARNING: File", surface_file, "doesn't exist")
             heading = "Selected map doesn't exist"
             sim_info = "-"
             surface_layers = []
