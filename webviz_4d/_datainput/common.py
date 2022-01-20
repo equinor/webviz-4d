@@ -139,9 +139,9 @@ def get_plot_label(configuration, interval):
         labels.append(label)
 
     if difference_mode == "normal":
-        label = labels[0] + " - " + labels[1]
+        label = str(labels[0]) + " - " + str(labels[1])
     else:
-        label = labels[1] + " - " + labels[0]
+        label = str(labels[1]) + " - " + str(labels[0])
 
     return label
 
