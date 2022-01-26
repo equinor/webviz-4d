@@ -8,7 +8,7 @@ TESTS_REQUIRE = [
     "pylint",
     "mock",
     "black",
-    "bandit==1.7.1", # Version locked due to python 3.6 dependancey
+    "bandit==1.7.1",  # Version locked due to python 3.6 dependancey
     "pytest-xdist",
 ]
 
