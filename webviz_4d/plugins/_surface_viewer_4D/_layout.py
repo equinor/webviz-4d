@@ -1,8 +1,9 @@
 import json
 
-import dash_html_components as html
-import dash_core_components as dcc
 import webviz_core_components as wcc
+from dash import html
+from dash import dcc
+
 from webviz_subsurface_components import LayeredMap
 
 
