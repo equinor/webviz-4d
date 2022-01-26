@@ -21,91 +21,6 @@ def create_map_settings(
     return map_dict
 
 
-def get_metadata(metadata_file):
-    if os.path.isfile(metadata_file):
-        print("Reading surface metadata file", metadata_file)
-        metadata = pd.read_csv(metadata_file)
-    else:
-        print("ERROR: Surface metadata file:", metadata_file, "not found")
-        metadata = None
-
-    return metadata
-
-
-def create_map_defaults(metadata_df, default_interval, observations, simulations):
-    observed_attributes = get_attributes(metadata_df, observations)
-    simulated_attributes = get_attributes(metadata_df, simulations)
-
-    realizations = get_realizations(metadata_df, simulations)
-    ensembles = get_ensembles(metadata_df, simulations)
-
-    ensemble = ensembles[0]
-    realization = realizations[0]
-
-    map_defaults = []
-
-    if observed_attributes:
-        rows = metadata_df.loc[
-            (metadata_df["data.time.t2"] == default_interval[0:10])
-            & (metadata_df["data.time.t1"] == default_interval[11:])
-        ]
-        observed_attribute = observed_attributes[0]
-        observed_name = rows["data.name"].values[0]
-
-        map_default = create_map_settings(
-            observed_attribute,
-            observed_name,
-            observations,
-            ensemble,
-            realization,
-            default_interval,
-        )
-        map_defaults.append(map_default)
-
-        if simulated_attributes:
-            rows = metadata_df.loc[
-                (metadata_df["data.time.t2"] == default_interval[0:10])
-                & (metadata_df["data.time.t1"] == default_interval[11:])
-            ]
-
-            simulated_attribute = rows["data.content"].values[0]
-            simulated_name = rows["data.name"].values[0]
-
-            map_default = create_map_settings(
-                simulated_attribute,
-                simulated_name,
-                simulations,
-                ensemble,
-                realization,
-                default_interval,
-            )
-            map_defaults.append(map_default)
-            map_defaults.append(map_default)
-
-    elif simulated_attributes:
-        rows = metadata_df.loc[
-            (metadata_df["data.time.t2"] == default_interval[0:10])
-            & (metadata_df["data.time.t1"] == default_interval[11:])
-        ]
-
-        simulated_attribute = rows["data.content"].values[0]
-        simulated_name = rows["data.name"].values[0]
-
-        map_default = create_map_settings(
-            simulated_attribute,
-            simulated_name,
-            simulations,
-            ensemble,
-            realization,
-            default_interval,
-        )
-        map_defaults.append(map_default)
-        map_defaults.append(map_default)
-        map_defaults.append(map_default)
-    # print("map_defaults", map_defaults)
-    return map_defaults
-
-
 def get_map_defaults(selection_options, default_interval, observations, simulations):
     observed_options = selection_options[observations]
     simulated_options = selection_options[simulations]
@@ -175,7 +90,6 @@ def get_map_defaults(selection_options, default_interval, observations, simulati
         map_defaults.append(map_default)
         map_defaults.append(map_default)
 
-    print("map_defaults", map_defaults)
     return map_defaults
 
 
@@ -342,7 +256,7 @@ def get_ensembles(metadata, map_type):
     selected_type = metadata.loc[metadata["map_type"] == map_type]
 
     if not selected_type.empty:
-        ensembles_list = selected_type["fmu_id.iteration"].values
+        ensembles_list = selected_type["fmu_id.ensemble"].values
         ensembles = list(set(ensembles_list))
 
     return sorted(ensembles)
