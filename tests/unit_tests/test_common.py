@@ -4,22 +4,22 @@ import pytest
 import webviz_4d._datainput.common as common
 
 
+config_file = "./tests/data/example_config.yaml"
+config = common.read_config(config_file)
+config_folder = os.path.dirname(config_file)
+
+settings_file = common.get_config_item(config, "settings")
+settings_file = os.path.join(config_folder, settings_file)
+settings = common.read_config(settings_file)
+
+
 def test_read_config():
-    config_file = "./tests/data/example_config.yaml"
-    config = common.read_config(config_file)
     well_folder = common.get_config_item(config, "wellfolder")
 
     assert well_folder == "./well_data"
 
 
 def test_get_well_colors():
-    config_file = "./tests/data/example_config.yaml"
-    config_folder = os.path.dirname(config_file)
-    config = common.read_config(config_file)
-
-    settings_file = common.get_config_item(config, "settings")
-    settings_file = os.path.join(config_folder, settings_file)
-    settings = common.read_config(settings_file)
     colors = common.get_well_colors(settings)
 
     default = colors["default"]
@@ -30,14 +30,6 @@ def test_get_well_colors():
 
 
 def test_get_plot_label():
-    config_file = "./tests/data/example_config.yaml"
-    config_folder = os.path.dirname(config_file)
-    config = common.read_config(config_file)
-
-    settings_file = common.get_config_item(config, "settings")
-    settings_file = os.path.join(config_folder, settings_file)
-    settings = common.read_config(settings_file)
-
     interval = "2020-10-01-2019-10-01"
     plot_label = common.get_plot_label(settings, interval)
     assert plot_label == "PRM1 - PRM0"

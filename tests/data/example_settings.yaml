@@ -62,6 +62,9 @@ date_labels:
     20201001: PRM1
     20211001: PRM2
 
+polygon_colors:
+    faults: gray 
+    owc_outline: lightslategray
 
     
  

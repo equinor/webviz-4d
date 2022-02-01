@@ -5,8 +5,8 @@ import numpy as np
 import dash
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
-import dash_html_components as html
-import dash_core_components as dcc
+from dash import html
+from dash import dcc
 
 from webviz_4d._datainput._metadata import unique_values
 
