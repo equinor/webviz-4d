@@ -1,0 +1,10 @@
+Wellbore,Well,PDM Well,Drilling ended,Type,Status,Fluid(s),Top Screen/Perf [mMD],Base Screen/Perf [mMD],Start oil prod.,Last oil prod.,Start gas inj.,Last gas inj.,Start water inj.,Last water inj.
+55/33-1,55/33-1,,2017-03-08,exploration,plugged and abandoned,oil,,,,,,,,
+55/33-2,55/33-2,,2017-03-08,wildcat,plugged and abandoned,dry,,,,,,,,
+55/33-3,55/33-3,,2017-03-08,wildcat,plugged and abandoned,oil,,,,,,,,
+55/33-A-1,55/33-A-1,55/33-A-1,2017-03-08,production,active,oil,,,2018-01-06,,,,,
+55/33-A-2,55/33-A-2,55/33-A-2,2017-03-08,production,active,oil,,,2018-03-11,,,,,
+55/33-A-3,55/33-A-3,55/33-A-3,2017-03-08,production,active,oil,,,2018-07-14,,,,,
+55/33-A-4,55/33-A-4,55/33-A-4,2017-03-08,production,active,oil,,,2018-09-23,,,,,
+55/33-A-5,55/33-A-5,55/33-A-5,2017-03-08,injection,active,water,,,,,,,2018-05-09,
+55/33-A-6,55/33-A-6,55/33-A-6,2017-03-08,injection,active,water,,,,,,,2018-11-18,
