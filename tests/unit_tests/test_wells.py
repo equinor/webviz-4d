@@ -1,4 +1,5 @@
 import os
+import os
 import pytest
 from pathlib import Path
 import xtgeo
@@ -15,21 +16,14 @@ from webviz_4d._datainput.well import (
     load_all_wells,
 )
 
-config_file = "./tests/data/example_config.yaml"
-config = common.read_config(config_file)
-config_folder = os.path.dirname(config_file)
-
-settings_file = common.get_config_item(config, "settings")
-settings_file = os.path.join(config_folder, settings_file)
-settings_folder = os.path.dirname(settings_file)
-settings = common.read_config(settings_file)
-
-well_folder = settings["wellfolder"]
-well_folder = Path(os.path.join(settings_folder, well_folder))
+test_folder = "tests"
+data_folder = "data"
+well_folder = "well_data"
 
 
 def test_load_well():
-    well_file = "./tests/data/well_data/55_33-A-1.w"
+    well_file = "55_33-A-1.w"
+    well_file = Path(os.path.join(test_folder, data_folder, well_folder, well_file))
 
     xtgeo_well_A1 = xtgeo.well_from_file(well_file, mdlogname="MD")
     well_A1 = load_well(well_file)
@@ -38,11 +32,18 @@ def test_load_well():
 
 
 def test_load_all_wells():
-    well_file = "./tests/data/well_data/55_33-A-1.w"
+    well_file = "55_33-A-1.w"
+    well_file = Path(os.path.join(test_folder, data_folder, well_folder, well_file))
+
     xtgeo_well_A1 = xtgeo.well_from_file(well_file, mdlogname="MD")
     well_A1 = load_well(well_file)
 
-    all_wells_info = read_csv(csv_file=Path(well_folder) / "wellbore_info.csv")
+    wellbore_info = "wellbore_info.csv"
+    wellbore_info = Path(
+        os.path.join(test_folder, data_folder, well_folder, wellbore_info)
+    )
+
+    all_wells_info = read_csv(csv_file=wellbore_info)
     all_wells_df = load_all_wells(all_wells_info)
 
     well_A1_df = all_wells_df[all_wells_df["WELLBORE_NAME"] == "55/33-A-1"]
