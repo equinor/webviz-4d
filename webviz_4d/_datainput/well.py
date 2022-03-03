@@ -4,7 +4,7 @@ import xtgeo
 
 def load_well(well_path):
     """Return a well object (xtgeo) for a given file (RMS ascii format)"""
-    return xtgeo.Well(well_path, mdlogname="MD")
+    return xtgeo.well_from_file(well_path, mdlogname="MD")
 
 
 def load_all_wells(metadata):
