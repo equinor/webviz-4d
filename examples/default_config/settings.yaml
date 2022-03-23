@@ -1,0 +1,85 @@
+#Configuration file: settings.yaml
+field_name: DROGON
+well_data: ../well_data               
+production_data: ../production_data 
+polygon_data: ../polygon_data   
+selector_file: ./selectors.yaml     
+      
+colormaps_folder: ../colormaps/    
+    
+fmu_directory: ../fields/drogon/default_config/fmu_data
+
+simulated_maps: 
+    realization_names: [realization-*, statistics]
+    ensemble_names: [iter-*]
+    map_directories: [share/results/maps]
+observed_maps: 
+    realization_names: [realization-0]
+    ensemble_names: [iter-0]
+    map_directories: [share/observations/maps]
+    
+rms_polygons: share/results/polygons    
+    
+depth_maps:
+    top_reservoir: ../fields/drogon/default_config/fmu_data/realization-0/iter-0/share/results/maps/topvolantis--ds_extract_geogrid.gri
+
+map_settings:
+    colormaps_folder: ../colormaps/
+    surface_metadata_file: ./surface_metadata.csv
+    colormaps_settings: ./attribute_maps.csv
+    default_colormap: inferno
+    attribute_settings:     
+        amplitude_mean:
+            color:   seismic_r
+            min:  -0.02
+            max:   0.02
+        amplitude_rms:
+            color:   inferno
+            min:  0
+            max:  0.01
+        average_pressure:
+            color:   seismic_r  
+            min:   -5
+            max:    5     
+        oilthickness:
+            color:   seismic_r
+            min:    -5
+            max:     5
+        average_sgas:
+            color:   seismic_r 
+            min: -0.5
+            max:  0.5   
+        average_soil:
+            color:   seismic_r 
+            min: -0.5
+            max:  0.5  
+        average_swat:
+            color:   seismic_r 
+            min: -0.5
+            max:  0.5   
+        oilthickness:
+            color:   seismic_r 
+            min: -1
+            max:  1
+        relai_mean:
+            color:   seismic_r 
+            min: -0.03
+            max:  0.03         
+        
+well_colors:
+    default: black
+    oil_open: lime
+    oil_production: green
+    gas_open: salmon
+    gas_production: red
+    gas_injection:  magenta
+    water_injection: blue
+    wag_injection: pink   
+    planned: purple   
+    
+polygon_colors:
+    faults: black   
+    
+prod_data_intervals: 
+    
+ 

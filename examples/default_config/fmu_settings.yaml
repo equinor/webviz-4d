@@ -1,0 +1,15 @@
+fmu_directory: 
+
+simulated_maps: 
+    realization_names: [realization-*]
+    ensemble_names: [iter-*]
+    map_directories: [share/results/maps] 
+    aggregated_directories: []
+    
+observed_maps: 
+    realization_names: [realization-0]
+    ensemble_names: [iter-0]
+    map_directories: [share/observations/maps] 
+    
+    
+    
