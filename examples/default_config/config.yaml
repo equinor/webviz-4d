@@ -1,0 +1,268 @@
+# Configuration file: config.yaml
+title: Webviz-4D Drogon                              # Customize
+ 
+shared_settings:
+    fmu_directory: ../fields/drogon/default_config/fmu_data  # Customize 
+    label: November 2021                        # Customize
+
+    simulated_maps: 
+        realization_names: [realization-*, statistics]      
+        ensemble_names: [iter-*, pred]                              # Customize        
+        map_directories: [share/results/maps]           # Customize
+        
+    observed_maps: 
+        realization_names: [realization-0]                  
+        ensemble_names: [iter-1]                              # Customize    
+        map_directories: [share/observations/maps]          # Customize
+         
+    basic_well_layers: 
+        drilled_wells: Drilled wells                        
+        reservoir_section: Reservoir sections              
+        active_production:                # Customize
+        active_injection:                  # Customize
+        
+    additional_well_layers:      
+        production: Producers                               
+        production_start:              # Customize
+        production_completed:          
+        injection: Injectors                                
+        injection_start:                # Customize                  
+        injection_completed:           
+        
+    wellfolder: &wellfolder ../well_data 
+    production_data: &production_data ../production_data 
+    polygons_folder: &polygons_folder ../polygon_data          
+    colormaps_folder: &colormaps_folder ../colormaps/     
+    selector_file: &selector_file ./selectors.yaml                
+    surface_metadata_file: &surface_metadata_file ./surface_metadata.csv
+    attribute_maps_file: &attribute_maps_file ./attribute_maps.csv
+    settings: &settings ./settings.yaml 
+    interval_mode: &interval_mode "reverse"       
+        
+# ------------------------------
+options:
+  menu:
+    show_logo: true
+    bar_position: left
+    drawer_position: left
+    initially_pinned: true
+    initially_collapsed: true
+
+# ------------------------------
+layout:
+  - section: Webviz-4D Menu (08.11.21) 
+    content:
+      # -----------------------------         
+      - page: Front page 
+        icon: home
+        content:  
+          - BannerImage:
+              image: ../image.jpg                           
+              title: Drogon Webviz-4D                   # Customize
+          - Markdown: 
+              markdown_file: ../front_page.md  
+              
+      # ------------------------------
+      - group: Information
+        icon: info_circle
+        content:    
+          - page: Webviz-4D
+            content:   
+              - EmbedPdf:  
+                  pdf_file: ./webviz-4d.pdf 
+                                   
+          - page: Seismic data
+            content:   
+              - EmbedPdf:  
+                  pdf_file: ./seismic.pdf  
+                  
+          - page: Timelaps maps
+            content:   
+              - EmbedPdf:  
+                  pdf_file: ./maps.pdf                  # Customize                              
+                  
+          - page: How was this made
+            content:
+              - SyntaxHighlighter:
+                  filename: ./config.yaml 
+              - SyntaxHighlighter:
+                  filename: ./settings.yaml  
+                  
+      # -------------------------------
+      - group: Timelapse maps
+        icon: layers
+        content:    
+ 
+          - page: Observed and simulated maps
+            content:
+              - SurfaceViewer4D: 
+                  wellfolder: *wellfolder               
+                  production_data: *production_data
+                  polygons_folder: *polygons_folder       
+                  colormaps_folder: *colormaps_folder     
+                  selector_file: *selector_file 
+                  surface_metadata_file: *surface_metadata_file
+                  attribute_maps_file: *attribute_maps_file
+                  settings:  *settings 
+                  interval_mode: *interval_mode                   
+                  
+                  map1_defaults:
+                    attribute: amplitude_mean               # Customize 
+                    name: topvolantis                         # Customize
+                    map_type: observed                          # Customize
+                    ensemble: iter-0                              # Customize
+                    realization: realization-0                  # Customize      
+                  map2_defaults: 
+                    attribute: amplitude_mean               # Customize
+                    name: topvolantis                          # Customize
+                    map_type: simulated                         # Customize
+                    ensemble: iter-0                              # Customize
+                    realization: realization-0                  # Customize
+                  map3_defaults:
+                    attribute: oilthickness                   # Customize
+                    name: volon                          # Customize 
+                    map_type: simulated                         # Customize
+                    ensemble: iter-0                              # Customize
+                    realization: realization-0                  # Customize
+                     
+                  default_interval: 2020-07-01-2019-07-01       # Customize
+                                     
+          - page: Observed maps
+            content:
+              - SurfaceViewer4D: 
+                  wellfolder: *wellfolder               
+                  production_data: *production_data
+                  polygons_folder: *polygons_folder       
+                  colormaps_folder: *colormaps_folder     
+                  selector_file: *selector_file 
+                  surface_metadata_file: *surface_metadata_file
+                  attribute_maps_file: *attribute_maps_file
+                  settings:  *settings 
+                  interval_mode: *interval_mode                   
+                  
+                  map1_defaults: 
+                    attribute: amplitude_mean              # Customize  
+                    name: topvolantis                                 # Customize
+                    map_type: observed                          # Customize
+                    ensemble: iter-0                              # Customize
+                    realization: realization-0                  # Customize
+                  map2_defaults: 
+                    attribute: amplitude_rms                         # Customize
+                    name: topvolantis                                 # Customize 
+                    map_type: observed                          # Customize
+                    ensemble: iter-0                              # Customize
+                    realization: realization-0                  # Customize     
+                  map3_defaults:
+                    attribute: relai_mean                         # Customize 
+                    name: valysar                                 # Customize
+                    map_type: observed                          # Customize
+                    ensemble: iter-0                              # Customize
+                    realization: realization-0                  # Customize
+                    
+                  default_interval: 2020-10-02-2020-06-02       # Customize   
+ 
+
+      # -------------------------------
+      - group: Well overviews
+        icon: table_chart
+        content:    
+ 
+          - page: Wellbore overview  
+            content:
+                - DataTable:
+                      csv_file: ../well_data/wellbore_overview.csv  
+                      sorting: True
+                      filtering: True  
+                      
+          - page: Production/injection overview 
+            content:
+                - DataTable:
+                      csv_file: ../production_data/production_overview.csv  
+                      sorting: True
+                      filtering: True                        
+                                        
+      # -------------------------------
+      - group: Production/injection plots
+        icon: timeline
+        content:    
+ 
+          - page: Production plots  
+            content:
+                - TablePlotter:
+                    csv_file: ../production_data/production_fluid_table.csv
+                    plot_options:
+                      x: 4D_interval
+                      y: Volumes
+                      type: bar   
+                      color: Fluid
+                      barmode: group
+                      facet_col: Well
+                    filter_cols:
+                      - Well  
+                      - 4D_interval
+                      - Fluid  
+                    filter_defaults: 
+                      Well: [A-1]                                   # Customize
+                    column_color_discrete_maps:
+                      Fluid:
+                         Produced_Oil_[kSm3]: '#00fa00'
+                         Produced_Gas_[MSm3]: '#fa0000'
+                         Produced_Water_[km3]: '#0000fa'  
+                    lock: True                     
+
+          - page: Injection plots  
+            content:
+                - TablePlotter:
+                    csv_file: ../production_data/injection_fluid_table.csv
+                    plot_options:
+                      x: 4D_interval
+                      y: Volumes
+                      type: bar   
+                      color: Fluid
+                      barmode: group
+                      facet_col: Well
+                    filter_cols:
+                      - Well  
+                      - 4D_interval
+                      - Fluid  
+                    filter_defaults: 
+                      Well: [A-5]                                  # Customize
+                    column_color_discrete_maps:
+                      Fluid:
+                         Injected_Gas_[MSm3]: '#fa0000'
+                         Injected_Water_[km3]: '#0000fa'  
+                    lock: True          
+
+      # -------------------------------
+      - group: Production/injection volumes
+        icon: table_chart
+        content:    
+ 
+          - page: Oil production volumes [kSm3] 
+            content:
+                - DataTable:
+                      csv_file: ../production_data/BORE_INC_OIL_VOL.csv  
+                      sorting: True
+                      filtering: True                  
+
+          - page: Gas production volumes [MSm3]
+            content:
+                - DataTable:
+                      csv_file: ../production_data/BORE_INC_GAS_VOL.csv  
+                      sorting: True
+                      filtering: True 
+                  
+          - page: Water production volumes [km3]
+            content:        
+                - DataTable:
+                      csv_file: ../production_data/BORE_INC_WAT_VOL.csv  
+                      sorting: True
+                      filtering: True      
+                  
+          - page: Water injection volumes [km3]  
+            content:
+                - DataTable:
+                      csv_file: ../production_data/BORE_INC_WI_VOL.csv  
+                      sorting: True
+                      filtering: True 
+                                                            
