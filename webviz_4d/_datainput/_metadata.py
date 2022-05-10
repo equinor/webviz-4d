@@ -155,11 +155,11 @@ def get_all_intervals(meta_df, mode):
 
 
 def unique_values(list_values):
-    clean_list = [value for value in list_values if str(value) != "nan"]
-    list_set = set(clean_list)
-    unique_list = list(list_set)
+    # clean_list = [value for value in list_values if str(value) != "nan"]
+    # list_set = set(clean_list)
+    # unique_list = list(list_set)
 
-    return sorted(unique_list)
+    return list_values
 
 
 def get_col_values(dataframe, col_name):
