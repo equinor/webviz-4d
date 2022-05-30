@@ -217,6 +217,7 @@ def make_new_well_layer(
 
                         if (
                             "completed" in selection
+                            and not math.isnan(md_top_res)
                             and top_completion
                             and base_completion
                         ):
