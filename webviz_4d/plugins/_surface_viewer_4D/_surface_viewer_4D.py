@@ -533,6 +533,42 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         return interval_well_layers
 
+    def get_map_scaling(self, data, map_type, realization):
+        min_max = None
+        colormap_settings = self.colormap_settings
+
+        if self.colormap_settings is not None:
+            interval = data["date"]
+            interval = (
+                interval[0:4]
+                + interval[5:7]
+                + interval[8:10]
+                + "_"
+                + interval[11:15]
+                + interval[16:18]
+                + interval[19:21]
+            )
+
+            zone = data.get("name")
+
+            selected_data = colormap_settings[
+                (colormap_settings["map type"] == map_type)
+                & (colormap_settings["attribute"] == data["attr"])
+                & (colormap_settings["interval"] == interval)
+                & (colormap_settings["name"] == zone)
+            ]
+
+            if "std" in realization:
+                settings = selected_data[selected_data["realization"] == "std"]
+            else:
+                settings = selected_data[
+                    selected_data["realization"] == "realization-0"
+                ]
+
+            min_max = settings[["lower_limit", "upper_limit"]]
+
+        return min_max
+
     def make_map(self, data, ensemble, real, attribute_settings, map_idx):
         data = json.loads(data)
 
@@ -545,34 +581,7 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         if os.path.isfile(surface_file):
             surface = load_surface(surface_file)
-
-            if self.colormap_settings is not None:
-                interval = data["date"]
-                interval = (
-                    interval[0:4]
-                    + interval[5:7]
-                    + interval[8:10]
-                    + "_"
-                    + interval[11:15]
-                    + interval[16:18]
-                    + interval[19:21]
-                )
-
-                m_data = self.colormap_settings.loc[
-                    self.colormap_settings["map type"] == map_type
-                ]
-
-                selected_data = m_data[
-                    (m_data["attribute"] == data["attr"])
-                    & (m_data["interval"] == interval)
-                    & (m_data["realization"] == real)
-                    & (m_data["name"] == selected_zone)
-                ]
-
-                metadata = selected_data[["lower_limit", "upper_limit"]]
-
-            else:
-                metadata = None
+            metadata = self.get_map_scaling(data, map_type, real)
 
             surface_layers = [
                 make_surface_layer(
