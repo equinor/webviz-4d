@@ -1,4 +1,5 @@
 import pandas as pd
+import math
 import xtgeo
 
 
@@ -50,7 +51,7 @@ def get_position_data(well_dataframe, md_start, md_end):
 
     well_df = well_dataframe[well_dataframe["MD"] >= md_start]
 
-    if md_end:
+    if md_end and not math.isnan(md_end):
         well_df = well_df[well_df["MD"] <= md_end]
 
     if len(well_df) > 20:
