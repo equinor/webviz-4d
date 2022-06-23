@@ -74,7 +74,7 @@ def make_new_well_layer(
 
     if os.path.exists(df_file):
         layer_df = pd.read_csv(df_file)
-        print("Well layer df read:", df_file)
+        # print("Well layer df read:", df_file)
 
         for _index, row in layer_df.iterrows():
             true_name = row["true_name"]
@@ -92,7 +92,6 @@ def make_new_well_layer(
                 data.append(polyline_data)
 
         layer = {"name": label, "checked": False, "base_layer": False, "data": data}
-        print("")
     else:
         wellbores = metadata_df["wellbore.name"].values
         list_set = set(wellbores)

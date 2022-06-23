@@ -283,6 +283,8 @@ class SurfaceViewer4D(WebvizPluginABC):
 
             interval = self.selected_intervals[0]
 
+            print("Creating/loading all well layers ...")
+
             # Create well layers for the layers that are independent of the selected 4D interval
 
             if self.drilled_wells_df is not None:
@@ -295,7 +297,6 @@ class SurfaceViewer4D(WebvizPluginABC):
                         else:
                             fluids = []
 
-                        print("Creating well layer for", value)
                         well_layer = make_new_well_layer(
                             self.wellfolder,
                             interval,
@@ -359,12 +360,11 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.interval_names = list(set(interval_names))
 
         for interval_name in self.interval_names:
-            print("interval:", interval_name)
             interval_layers = self.create_additional_well_layers(interval_name)
             self.all_interval_layers.append(interval_layers)
 
         # Create production and injection layers for the default interval
-        index = self.interval_names.index(interval)
+        index = self.interval_names.index(default_interval)
         self.interval_well_layers = self.all_interval_layers[index]
 
         # Create selectors (attributes, names and dates) for all 3 maps
@@ -545,7 +545,6 @@ class SurfaceViewer4D(WebvizPluginABC):
                     else:
                         fluids = []
 
-                    print("Creating well layer for", value)
                     well_layer = make_new_well_layer(
                         self.wellfolder,
                         interval,
@@ -670,7 +669,7 @@ class SurfaceViewer4D(WebvizPluginABC):
             surface_layers = []
             label = "-"
 
-        print("make map", time.time() - t0)
+        # print("make map", time.time() - t0)
 
         return (
             heading,
