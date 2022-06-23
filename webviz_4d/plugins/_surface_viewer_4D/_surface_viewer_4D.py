@@ -351,11 +351,15 @@ class SurfaceViewer4D(WebvizPluginABC):
         map_types = ["observed", "simulated"]
 
         for map_type in map_types:
-            intervals = self.selection_list[map_type]["interval"]
+            # intervals = self.selection_list[map_type]["interval"]
+            map_type_settings = self.selection_list.get(map_type)
 
-            if intervals:
-                for interval in intervals:
-                    interval_names.append(interval)
+            if map_type_settings:
+                intervals = map_type_settings.get("interval")
+
+                if intervals:
+                    for interval in intervals:
+                        interval_names.append(interval)
 
         self.interval_names = list(set(interval_names))
 
