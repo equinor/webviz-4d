@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import argparse
 import pandas as pd
+import json
 
 from webviz_4d._datainput._production import make_new_well_layer
 from webviz_4d.plugins._surface_viewer_4D._webvizstore import (
@@ -42,7 +43,7 @@ def main():
     description = "Create information about the well layers in WebViz-4D"
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("settings_file", help="Enter name of settings file")
-    parser.add_argument("interval", help="Enter wanted 4D interval")
+    # parser.add_argument("interval", help="Enter wanted 4D interval")
     args = parser.parse_args()
 
     settings_file = args.settings_file
@@ -50,7 +51,19 @@ def main():
     settings_folder = os.path.dirname(settings_file)
     settings = read_config(settings_file)
 
-    selected_interval = args.interval
+    selector_file = os.path.join(settings_folder, "selectors.yaml")
+    selections = read_config(selector_file)
+
+    interval_names = []
+    map_types = ["observed", "simulated"]
+
+    for map_type in map_types:
+        intervals = selections[map_type]["interval"]
+
+        if intervals:
+            for interval in intervals:
+                interval_names.append(interval)
+                interval_names = list(set(interval_names))
 
     well_folder = settings["well_data"]
     well_folder = os.path.join(settings_folder, well_folder)
@@ -161,9 +174,25 @@ def main():
             interval_label = ""
         elif "production" in selection or "injection" in selection:
             fluids = fluids_dict[selection]
-            interval_label = "_" + selected_interval
+
+            for interval in interval_names:
+                print("interval:", interval)
+                interval_label = "_" + interval
+
+                well_layer = make_new_well_layer(
+                    well_folder,
+                    interval,
+                    all_wells_df,
+                    drilled_wells_info,
+                    prod_data,
+                    well_colors,
+                    selection=selection,
+                    fluids=fluids,
+                    label=value,
+                )
         else:
             fluids = None
+            interval = ""
             interval_label = ""
 
         outfile = os.path.join(well_folder, selection + ".csv")
@@ -171,7 +200,8 @@ def main():
         print("\n" + selection, interval, fluids)
 
         well_layer = make_new_well_layer(
-            selected_interval,
+            well_folder,
+            interval,
             all_wells_df,
             drilled_wells_info,
             prod_data,
@@ -267,6 +297,7 @@ def main():
         print("\n" + selection, value)
 
         well_layer = make_new_well_layer(
+            well_folder,
             interval,
             all_wells_df,
             planned_wells_info,

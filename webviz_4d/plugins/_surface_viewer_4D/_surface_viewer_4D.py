@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 import os
 import numpy as np
+import time
 
 from webviz_config import WebvizPluginABC
 from webviz_4d._datainput._surface import make_surface_layer, load_surface
@@ -274,7 +275,15 @@ class SurfaceViewer4D(WebvizPluginABC):
                 self.all_wells_info["layer_name"] == "Drilled wells"
             ]
 
+            self.pdm_wells_info = self.drilled_wells_info.loc[
+                self.drilled_wells_info["wellbore.pdm_name"] != ""
+            ]
+
+            self.pdm_wells_df = load_all_wells(self.pdm_wells_info)
+
             interval = self.selected_intervals[0]
+
+            print("Creating/loading all well layers ...")
 
             # Create well layers for the layers that are independent of the selected 4D interval
 
@@ -288,8 +297,8 @@ class SurfaceViewer4D(WebvizPluginABC):
                         else:
                             fluids = []
 
-                        print("Creating well layer for", value)
                         well_layer = make_new_well_layer(
+                            self.wellfolder,
                             interval,
                             self.drilled_wells_df,
                             self.drilled_wells_info,
@@ -324,6 +333,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                 for planned_layer in planned_layers:
                     self.well_base_layers.append(
                         make_new_well_layer(
+                            self.wellfolder,
                             self.selected_intervals[0],
                             planned_well_df,
                             planned_well_info,
@@ -335,9 +345,31 @@ class SurfaceViewer4D(WebvizPluginABC):
                         )
                     )
 
-            # Create production and injection layers for the default interval
+        # Create production and injection layers for all intervals
+        self.all_interval_layers = []
+        interval_names = []
+        map_types = ["observed", "simulated"]
 
-            self.interval_well_layers = self.create_additional_well_layers(interval)
+        for map_type in map_types:
+            # intervals = self.selection_list[map_type]["interval"]
+            map_type_settings = self.selection_list.get(map_type)
+
+            if map_type_settings:
+                intervals = map_type_settings.get("interval")
+
+                if intervals:
+                    for interval in intervals:
+                        interval_names.append(interval)
+
+        self.interval_names = list(set(interval_names))
+
+        for interval_name in self.interval_names:
+            interval_layers = self.create_additional_well_layers(interval_name)
+            self.all_interval_layers.append(interval_layers)
+
+        # Create production and injection layers for the default interval
+        index = self.interval_names.index(default_interval)
+        self.interval_well_layers = self.all_interval_layers[index]
 
         # Create selectors (attributes, names and dates) for all 3 maps
         self.selector = SurfaceSelector(app, self.selection_list, self.map_defaults[0])
@@ -484,25 +516,25 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         return heading, sim_info, label
 
-    def create_selector_lists(self, map_defaults):
-        map_type = map_defaults["map_type"]
-        map_metadata = self.surface_metadata[
-            self.surface_metadata["map_type"] == map_type
-        ]
+    # def create_selector_lists(self, map_defaults):
+    #     map_type = map_defaults["map_type"]
+    #     map_metadata = self.surface_metadata[
+    #         self.surface_metadata["map_type"] == map_type
+    #     ]
 
-        intervals_df = map_metadata[["data.time.t1", "data.time.t2"]]
-        intervals_list = []
+    #     intervals_df = map_metadata[["data.time.t1", "data.time.t2"]]
+    #     intervals_list = []
 
-        for _index, row in intervals_df.iterrows():
-            if self.interval_mode == "reverse":
-                interval = row["data.time.t2"] + "-" + row["data.time.t1"]
-            else:
-                interval = row["data.time.t1"] + "-" + row["data.time.t2"]
+    #     for _index, row in intervals_df.iterrows():
+    #         if self.interval_mode == "reverse":
+    #             interval = row["data.time.t2"] + "-" + row["data.time.t1"]
+    #         else:
+    #             interval = row["data.time.t1"] + "-" + row["data.time.t2"]
 
-            if interval not in intervals_list:
-                intervals_list.append(interval)
+    #         if interval not in intervals_list:
+    #             intervals_list.append(interval)
 
-        return map_metadata, intervals_list
+    #     return map_metadata, intervals_list
 
     def create_additional_well_layers(self, interval):
         interval_well_layers = []
@@ -518,9 +550,10 @@ class SurfaceViewer4D(WebvizPluginABC):
                         fluids = []
 
                     well_layer = make_new_well_layer(
+                        self.wellfolder,
                         interval,
-                        self.drilled_wells_df,
-                        self.drilled_wells_info,
+                        self.pdm_wells_df,
+                        self.pdm_wells_info,
                         self.prod_data,
                         self.colors,
                         selection=key,
@@ -570,6 +603,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         return min_max
 
     def make_map(self, data, ensemble, real, attribute_settings, map_idx):
+        t0 = time.time()
         data = json.loads(data)
 
         selected_zone = data.get("name")
@@ -617,10 +651,10 @@ class SurfaceViewer4D(WebvizPluginABC):
 
             interval = data["date"]
 
-            if (
-                interval != self.selected_intervals[map_idx]
-            ):  # Create new interval layers if selected interval has changesd
-                self.interval_well_layers = self.create_additional_well_layers(interval)
+            # Load new interval layers if selected interval has changesd
+            if interval != self.selected_intervals[map_idx]:
+                index = self.interval_names.index(interval)
+                self.interval_well_layers = self.all_interval_layers[index]
                 self.selected_intervals[map_idx] = interval
 
             for interval_layer in self.interval_well_layers:
@@ -638,6 +672,8 @@ class SurfaceViewer4D(WebvizPluginABC):
             sim_info = "-"
             surface_layers = []
             label = "-"
+
+        # print("make map", time.time() - t0)
 
         return (
             heading,
