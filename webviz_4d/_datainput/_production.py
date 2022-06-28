@@ -66,9 +66,9 @@ def make_new_well_layer(
     data = []
 
     if "prod" in selection or "inj" in selection:
-        df_file = selection + "_" + interval_4d + ".csv"
+        df_file = "well_layer_" + selection + "_" + interval_4d + ".csv"
     else:
-        df_file = selection + ".csv"
+        df_file = "well_layer_" + selection + ".csv"
 
     df_file = os.path.join(well_data_dir, df_file)
 
