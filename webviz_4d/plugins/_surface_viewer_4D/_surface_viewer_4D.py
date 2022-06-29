@@ -241,6 +241,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         #    self.drilled_wells_info: dataframe with metadata for all drilled wells
 
         self.wellfolder = wellfolder
+        self.well_layer_dir = Path(os.path.join(wellfolder, "well_layers"))
         print("Reading well data from", self.wellfolder)
 
         if self.wellfolder:
@@ -280,6 +281,11 @@ class SurfaceViewer4D(WebvizPluginABC):
             ]
 
             self.pdm_wells_df = load_all_wells(self.pdm_wells_info)
+
+            self.well_layer_files = [
+                get_path(Path(fn))
+                for fn in json.load(find_files(self.well_layer_dir, ".csv"))
+            ]
 
             interval = self.selected_intervals[0]
 
@@ -404,6 +410,7 @@ class SurfaceViewer4D(WebvizPluginABC):
             store_functions.append(
                 (get_path, [{"path": fn} for fn in self.colormap_files])
             )
+
         if self.polygons_folder is not None:
             store_functions.append(
                 (find_files, [{"folder": self.polygons_folder, "suffix": ".csv"}])
@@ -421,6 +428,7 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         if self.selector_file is not None:
             store_functions.append((get_path, [{"path": self.selector_file}]))
+
         if self.wellfolder is not None:
             store_functions.append(
                 (read_csv, [{"csv_file": Path(self.wellfolder) / "wellbore_info.csv"}])
@@ -435,6 +443,13 @@ class SurfaceViewer4D(WebvizPluginABC):
                         {"path": Path(self.wellfolder) / ".production_update.yaml"},
                     ],
                 )
+            )
+
+            store_functions.append(
+                (find_files, [{"folder": self.well_layer_dir, "suffix": ".csv"}])
+            )
+            store_functions.append(
+                (get_path, [{"path": fn} for fn in self.well_layer_files])
             )
 
         for fn in list(self.surface_metadata["filename"]):
