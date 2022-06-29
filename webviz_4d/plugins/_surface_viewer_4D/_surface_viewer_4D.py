@@ -457,6 +457,7 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         if self.settings_path is not None:
             store_functions.append((get_path, [{"path": self.settings_path}]))
+
         return store_functions
 
     def ensembles(self, map_number):

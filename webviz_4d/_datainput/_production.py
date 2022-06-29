@@ -1,16 +1,12 @@
 import os
 import math
 import pandas as pd
-import json
+from pathlib import Path
 
 from webviz_4d._datainput import common
+from webviz_4d._datainput import well
 from webviz_4d._datainput.well import get_well_polyline
-from webviz_4d.plugins._surface_viewer_4D._webvizstore import (
-    read_csv,
-    read_csvs,
-    find_files,
-    get_path,
-)
+from webviz_4d.plugins._surface_viewer_4D._webvizstore import get_path
 
 
 def get_production_type(selection):
@@ -315,11 +311,9 @@ def make_new_well_layer(
     else:
         df_file = "well_layer_" + selection + ".csv"
 
-    well_layer_dir = os.path.join(well_data_dir, "well_layers")
-    df_file = os.path.join(well_layer_dir, df_file)
-
-    df_file = get_path(df_file)
-    layer_df = read_csv(df_file)
+    df_file = os.path.join(well_data_dir, "well_layers", df_file)
+    df_file = get_path(Path(df_file))
+    layer_df = pd.read_csv(df_file)
 
     for _index, row in layer_df.iterrows():
         true_name = row["true_name"]
