@@ -306,14 +306,20 @@ def make_new_well_layer(
     # t0 = time.time()
     data = []
 
-    if "prod" in selection or "inj" in selection:
+    if "active" in selection:
+        df_file = "well_layer_" + selection + ".csv"
+    elif "prod" in selection or "inj" in selection:
         df_file = "well_layer_" + selection + "_" + interval_4d + ".csv"
     else:
         df_file = "well_layer_" + selection + ".csv"
 
     df_file = os.path.join(well_data_dir, "well_layers", df_file)
     df_file = get_path(Path(df_file))
-    layer_df = pd.read_csv(df_file)
+
+    if os.path.exists(df_file):
+        layer_df = pd.read_csv(df_file)
+    else:
+        layer_df = pd.DataFrame()
 
     for _index, row in layer_df.iterrows():
         true_name = row["true_name"]
