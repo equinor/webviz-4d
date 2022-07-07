@@ -16,7 +16,10 @@ from webviz_4d._datainput.common import (
 )
 
 from webviz_4d._datainput.well import load_all_wells
-from webviz_4d._datainput._production import make_new_well_layer
+from webviz_4d._datainput._production import (
+    get_well_layer_filename,
+    make_new_well_layer,
+)
 
 from webviz_4d._private_plugins.surface_selector import SurfaceSelector
 from webviz_4d._datainput._colormaps import load_custom_colormaps
@@ -289,13 +292,12 @@ class SurfaceViewer4D(WebvizPluginABC):
 
             interval = self.selected_intervals[0]
 
-            print("Creating/loading all well layers ...")
+            print("Loading all well layers ...")
 
             # Create well layers for the layers that are independent of the selected 4D interval
-
             if self.drilled_wells_df is not None:
                 for key, value in self.basic_well_layers.items():
-                    if value is not None:
+                    if value is not None and "planned" not in key:
                         if "production" in key:
                             fluids = ["oil"]
                         elif "injection" in key:
@@ -303,55 +305,49 @@ class SurfaceViewer4D(WebvizPluginABC):
                         else:
                             fluids = []
 
+                        well_layer_file = get_well_layer_filename(
+                            self.wellfolder, key, interval
+                        )
+                        well_layer_file = get_path(well_layer_file)
+
                         well_layer = make_new_well_layer(
-                            self.wellfolder,
-                            interval,
+                            well_layer_file,
                             self.drilled_wells_df,
-                            self.drilled_wells_info,
-                            self.prod_data,
-                            self.colors,
-                            selection=key,
-                            fluids=fluids,
                             label=value,
                         )
 
                         if well_layer is not None:
                             self.well_base_layers.append(well_layer)
 
-            # Load wellpaths for planned wells and create planned well layers
+            # Load planned wells layer (if wanted)
+            if "planned" in self.basic_well_layers:
+                try:
+                    planned_wells_df = self.all_wells_df.loc[
+                        self.all_wells_df["layer_name"] != "Drilled wells"
+                    ]
 
-            try:
-                planned_well_df = self.all_wells_df.loc[
-                    self.all_wells_df["layer_name"] != "Drilled wells"
-                ]
+                except:
+                    planned_wells_df = None
 
-                planned_well_info = self.all_wells_info.loc[
-                    self.all_wells_info["layer_name"] != "Drilled wells"
-                ]
-            except:
-                planned_well_df = None
-                planned_well_info = None
+                if planned_wells_df is not None:
+                    key = "planned"
+                    interval = ""
+                    value = self.basic_well_layers.get(key)
+                    well_layer_file = get_well_layer_filename(
+                        self.wellfolder, key, interval
+                    )
+                    well_layer_file = get_path(well_layer_file)
 
-            if planned_well_df is not None:
-                planned_layers_df = planned_well_info["layer_name"].dropna()
-                planned_layers = planned_layers_df.unique()
-
-                for planned_layer in planned_layers:
-                    self.well_base_layers.append(
-                        make_new_well_layer(
-                            self.wellfolder,
-                            self.selected_intervals[0],
-                            planned_well_df,
-                            planned_well_info,
-                            prod_data=None,
-                            colors=self.colors,
-                            selection="planned",
-                            fluids=[],
-                            label=planned_layer,
-                        )
+                    well_layer = make_new_well_layer(
+                        well_layer_file,
+                        planned_wells_df,
+                        label=value,
                     )
 
-        # Create production and injection layers for all intervals
+                    if well_layer is not None:
+                        self.well_base_layers.append(well_layer)
+
+        # Make production and injection layers for all intervals
         self.all_interval_layers = []
         interval_names = []
         map_types = ["observed", "simulated"]
@@ -532,53 +528,24 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         return heading, sim_info, label
 
-    # def create_selector_lists(self, map_defaults):
-    #     map_type = map_defaults["map_type"]
-    #     map_metadata = self.surface_metadata[
-    #         self.surface_metadata["map_type"] == map_type
-    #     ]
-
-    #     intervals_df = map_metadata[["data.time.t1", "data.time.t2"]]
-    #     intervals_list = []
-
-    #     for _index, row in intervals_df.iterrows():
-    #         if self.interval_mode == "reverse":
-    #             interval = row["data.time.t2"] + "-" + row["data.time.t1"]
-    #         else:
-    #             interval = row["data.time.t1"] + "-" + row["data.time.t2"]
-
-    #         if interval not in intervals_list:
-    #             intervals_list.append(interval)
-
-    #     return map_metadata, intervals_list
-
     def create_additional_well_layers(self, interval):
         interval_well_layers = []
 
         if get_dates(interval)[0] <= self.production_update:
             for key, value in self.additional_well_layers.items():
-                if value is not None:
-                    if "production" in key:
-                        fluids = ["oil"]
-                    elif "injection" in key:
-                        fluids = ["gas", "water"]
-                    else:
-                        fluids = []
+                well_layer_file = get_well_layer_filename(
+                    self.wellfolder, key, interval
+                )
+                well_layer_file = get_path(well_layer_file)
 
-                    well_layer = make_new_well_layer(
-                        self.wellfolder,
-                        interval,
-                        self.pdm_wells_df,
-                        self.pdm_wells_info,
-                        self.prod_data,
-                        self.colors,
-                        selection=key,
-                        fluids=fluids,
-                        label=value,
-                    )
+                well_layer = make_new_well_layer(
+                    well_layer_file,
+                    self.pdm_wells_df,
+                    label=value,
+                )
 
-                    if well_layer is not None:
-                        interval_well_layers.append(well_layer)
+                if well_layer is not None:
+                    interval_well_layers.append(well_layer)
 
         return interval_well_layers
 
