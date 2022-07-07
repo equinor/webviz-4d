@@ -4,9 +4,9 @@ import pandas as pd
 from pathlib import Path
 
 from webviz_4d._datainput import common
-from webviz_4d._datainput import well
 from webviz_4d._datainput.well import get_well_polyline
-from webviz_4d.plugins._surface_viewer_4D._webvizstore import get_path
+
+# from webviz_4d.plugins._surface_viewer_4D._webvizstore import get_path
 
 
 def get_production_type(selection):
@@ -52,261 +52,10 @@ def get_value(metadata_df, item, mode):
     return value
 
 
-def create_new_well_layer(
-    well_data_dir,
-    interval_4d,
-    wells_df,
-    metadata_df,
-    prod_data=None,
-    colors=None,
-    selection=None,
-    fluids=[],
-    label="Drilled wells",
-):
-    """Make layeredmap wells layer"""
-    # t0 = time.time()
-    data = []
+def get_well_layer_filename(well_data_dir, selection, interval_4d):
+    # Get the file name for the selected well well layer
 
-    wellbores = metadata_df["wellbore.name"].values
-    list_set = set(wellbores)
-    # convert the set to the list
-    unique_wellbores = sorted(list(list_set))
-
-    prod_type_txt = {"production": "prod", "injection": "inj"}
-
-    true_names = []
-    md_starts = []
-    md_ends = []
-    well_colors = []
-    tooltips = []
-
-    if "prod" in selection or "inj" in selection:
-        df_file = "well_layer_" + selection + "_" + interval_4d + ".csv"
-    else:
-        df_file = "well_layer_" + selection + ".csv"
-
-    well_layer_dir = os.path.join(well_data_dir, "well_layers")
-
-    if not os.path.isdir(well_layer_dir):
-        os.mkdir(well_layer_dir)
-
-    df_file = os.path.join(well_layer_dir, df_file)
-
-    for wellbore in unique_wellbores:
-        status = False
-        md_start = 0
-        md_end = None
-        color = "black"
-
-        well_metadata = metadata_df[metadata_df["wellbore.name"] == wellbore]
-        short_name = get_value(well_metadata, "wellbore.short_name", 0)
-        well_type = get_value(well_metadata, "wellbore.type", 0)
-        fluids = get_value(well_metadata, "wellbore.fluids", "")
-
-        top_completion = get_value(well_metadata, "top_completion_md", 0)
-        base_completion = get_value(well_metadata, "base_completion_md", 0)
-        well_label = get_value(well_metadata, "layer_name", 0)
-
-        tooltip = str(short_name) + ": " + well_type + " (" + str(fluids) + ")"
-
-        if selection == "drilled_wells":
-            color = "black"
-            status = True
-        elif selection == "planned" and well_type == selection and well_label == label:
-            color = colors[selection]
-            status = True
-        elif selection == "reservoir_section":
-            color = "black"
-            md_top_res = get_value(well_metadata, "wellbore.top_res_md", "min")
-
-            if md_top_res:
-                md_start = md_top_res
-                status = True
-        else:
-            md_top_res = get_value(well_metadata, "wellbore.top_res_md", "min")
-            interval_volume = 0
-            total_volume = 0
-            interval = check_interval(interval_4d)
-
-            if md_top_res:
-                md_start = md_top_res
-
-            if "production" in selection and md_top_res:
-                pdm_well_name = get_value(well_metadata, "wellbore.pdm_name", 0)
-                fluid = "oil"
-                prod_type = "production"
-                fluid_code = fluid + "_production"
-
-                (
-                    start_date,
-                    stop_date,
-                    interval_volume,
-                    total_volume,
-                ) = extract_production_info(
-                    pdm_well_name, prod_data, interval, "production", fluid
-                )
-
-            elif "injection" in selection and md_top_res:
-                pdm_well_name = get_value(well_metadata, "wellbore.pdm_name", 0)
-                (
-                    gi_start_date,
-                    gi_stop_date,
-                    interval_gi_volume,
-                    total_gi_volume,
-                ) = extract_production_info(
-                    pdm_well_name, prod_data, interval, "injection", "gas"
-                )
-                (
-                    wi_start_date,
-                    wi_stop_date,
-                    interval_wi_volume,
-                    total_wi_volume,
-                ) = extract_production_info(
-                    pdm_well_name, prod_data, interval, "injection", "water"
-                )
-
-                if gi_start_date and wi_start_date:
-                    start_date = min(gi_start_date, wi_start_date)
-
-                    if gi_stop_date and wi_stop_date:
-                        stop_date = max(gi_stop_date, wi_stop_date)
-                    else:
-                        stop_date = None
-
-                    if interval_wi_volume and interval_gi_volume:
-                        fluid = "wag"
-                        fluid_code = fluid + "_injection"
-                        interval_volume = 1
-                        total_volume = 1
-                    elif interval_gi_volume and interval_gi_volume > 0:
-                        fluid = "gas"
-                        fluid_code = fluid + "_injection"
-                        interval_volume = interval_gi_volume
-                        total_volume = total_gi_volume
-                    elif interval_wi_volume and interval_wi_volume > 0:
-                        fluid = "water"
-                        fluid_code = fluid + "_injection"
-                        interval_volume = interval_wi_volume
-                        total_volume = total_wi_volume
-
-                elif gi_start_date and (interval_gi_volume or total_gi_volume):
-                    start_date = gi_start_date
-                    stop_date = gi_stop_date
-                    fluid = "gas"
-                    fluid_code = fluid + "_injection"
-                    interval_volume = interval_gi_volume
-                    total_volume = total_gi_volume
-                elif wi_start_date and (interval_wi_volume or total_wi_volume):
-                    start_date = wi_start_date
-                    stop_date = wi_stop_date
-                    fluid = "water"
-                    fluid_code = fluid + "_injection"
-                    interval_volume = interval_wi_volume
-                    total_volume = total_wi_volume
-
-                prod_type = "injection"
-
-            if total_volume and total_volume > 0:
-                interval_info = get_info(start_date, stop_date, fluid, interval_volume)
-                total_info = get_info(start_date, stop_date, fluid, total_volume)
-
-                started = check_interval_date(interval, start_date)
-                stopped = check_interval_date(interval, stop_date)
-
-                if "active" in selection and start_date:
-                    if stop_date is None or stop_date == "---":
-                        color = "black"
-                        info = total_info
-                        status = True
-                elif "start" in selection and started == "inside":
-                    color = colors[fluid_code]
-                    info = interval_info
-                    status = True
-                else:
-                    color = colors[fluid_code]
-                    if started == "greater" or stopped == "less":
-                        interval_status = False
-                    else:
-                        if interval_volume and interval_volume > 0:
-                            interval_status = True
-                        else:
-                            interval_status = False
-
-                    if interval_status:
-                        color = colors[fluid_code]
-                        info = interval_info
-
-                        if (
-                            "completed" in selection
-                            and not math.isnan(md_top_res)
-                            and top_completion
-                            and base_completion
-                        ):
-                            md_start = top_completion
-                            md_end = base_completion
-                            status = True
-                        elif selection in ["production", "injection"]:
-                            status = True
-            if status:
-                txt = prod_type_txt.get(prod_type, prod_type)
-                tooltip = short_name + ": " + txt + " (" + str(info) + ")"
-
-        polyline_data = False
-
-        if status:
-            true_name = get_value(well_metadata, "wellbore.true_name", 0)
-            well_dataframe = wells_df[wells_df["WELLBORE_NAME"] == true_name]
-            polyline_data = get_well_polyline(
-                well_dataframe,
-                md_start,
-                md_end,
-                color,
-                tooltip,
-            )
-
-        if polyline_data:
-            data.append(polyline_data)
-            true_names.append(true_name)
-            md_starts.append(md_start)
-            md_ends.append(md_end)
-            well_colors.append(color)
-            tooltips.append(tooltip)
-
-    if data:
-        layer = {"name": label, "checked": False, "base_layer": False, "data": data}
-
-        df = pd.DataFrame()
-        df["true_name"] = true_names
-        df["md_end"] = md_ends
-        df["md_start"] = md_starts
-        df["color"] = well_colors
-        df["tooltip"] = tooltips
-
-        df.to_csv(df_file)
-        print("Well layer df created:", df_file)
-
-    else:
-        layer = {"name": label, "checked": False, "base_layer": False, "data": []}
-
-    return layer
-
-
-def make_new_well_layer(
-    well_data_dir,
-    interval_4d,
-    wells_df,
-    metadata_df,
-    prod_data=None,
-    colors=None,
-    selection=None,
-    fluids=[],
-    label="Drilled wells",
-):
-    """Make layeredmap wells layer"""
-    # t0 = time.time()
-    data = []
-
-    if "active" in selection:
+    if "active" in selection or "planned" in selection:
         df_file = "well_layer_" + selection + ".csv"
     elif "prod" in selection or "inj" in selection:
         df_file = "well_layer_" + selection + "_" + interval_4d + ".csv"
@@ -314,7 +63,20 @@ def make_new_well_layer(
         df_file = "well_layer_" + selection + ".csv"
 
     df_file = os.path.join(well_data_dir, "well_layers", df_file)
-    df_file = get_path(Path(df_file))
+
+    return df_file
+
+
+def make_new_well_layer(
+    well_layer_file,
+    wells_df,
+    label="Drilled wells",
+):
+    """Make layeredmap wells layer"""
+    # t0 = time.time()
+    data = []
+
+    df_file = well_layer_file
 
     if os.path.exists(df_file):
         layer_df = pd.read_csv(df_file)
