@@ -20,11 +20,13 @@ def load_custom_colormaps(csv_files):
         array[:, 2] = colormap_df["blue"].values
 
         name = colormap_df["name"].unique()[0]
-        color_map = colors.LinearSegmentedColormap.from_list(name, array)
-        pl.register_cmap(cmap=color_map)
 
-        color_map_r = color_map.reversed()
-        pl.register_cmap(cmap=color_map_r)
+        if not name in pl.colormaps():
+            color_map = colors.LinearSegmentedColormap.from_list(name, array)
+            pl.register_cmap(cmap=color_map)
+
+            color_map_r = color_map.reversed()
+            pl.register_cmap(cmap=color_map_r)
 
 
 def change_colormap(name, red_start, green_start, blue_start, n_values):
