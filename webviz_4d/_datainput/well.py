@@ -1,5 +1,6 @@
 import pandas as pd
 import math
+import numpy as np
 import xtgeo
 
 
@@ -56,11 +57,13 @@ def get_position_data(well_dataframe, md_start, md_end):
 
     if len(well_df) > 20:
         dfr = well_df[::4]
-        dfr_append_last = dfr.append(well_df.iloc[-1])
-
-        well_df = dfr_append_last.reset_index(drop=True)
-
-    positions = well_df[["X_UTME", "Y_UTMN"]].values
+        positions = dfr[["X_UTME", "Y_UTMN"]].values
+        pos_list = positions.tolist()
+        dfr_last = well_df.iloc[-1]
+        last_position = dfr_last[["X_UTME", "Y_UTMN"]].values
+        pos_list.append(last_position)
+    else:
+        positions = well_df[["X_UTME", "Y_UTMN"]].values
 
     return positions
 
