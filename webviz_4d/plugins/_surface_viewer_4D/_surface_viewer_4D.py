@@ -117,6 +117,10 @@ class SurfaceViewer4D(WebvizPluginABC):
         if self.additional_well_layers is None:
             self.additional_well_layers = default_additional_well_layers
 
+        self.all_well_layers = self.basic_well_layers.update(
+            self.additional_well_layers
+        )
+
         # Read production data
         self.prod_names = ["BORE_OIL_VOL.csv", "BORE_GI_VOL.csv", "BORE_WI_VOL.csv"]
         self.prod_folder = production_data
@@ -285,91 +289,41 @@ class SurfaceViewer4D(WebvizPluginABC):
 
             self.pdm_wells_df = load_all_wells(self.pdm_wells_info)
 
-            self.well_layer_files = [
-                get_path(Path(fn))
-                for fn in json.load(find_files(self.well_layer_dir, ".csv"))
-            ]
+            layer_overview_file = get_path(Path(self.wellfolder / "well_layers.yaml"))
+            self.well_layers_overview = read_config(layer_overview_file)
 
-            interval = self.selected_intervals[0]
+            self.well_basic_layers = []
+            self.all_interval_layers = []
 
             print("Loading all well layers ...")
+            self.layer_files = []
+            basic_layers = self.well_layers_overview.get("basic")
 
-            # Create well layers for the layers that are independent of the selected 4D interval
-            if self.drilled_wells_df is not None:
-                for key, value in self.basic_well_layers.items():
-                    if value is not None and "planned" not in key:
-                        if "production" in key:
-                            fluids = ["oil"]
-                        elif "injection" in key:
-                            fluids = ["gas", "water"]
-                        else:
-                            fluids = []
+            for key, value in basic_layers.items():
+                layer_file = get_path(
+                    Path(self.wellfolder / "well_layers" / "basic" / value)
+                )
+                label = self.basic_well_layers.get(key)
 
-                        well_layer_file = get_well_layer_filename(
-                            self.wellfolder, key, interval
-                        )
-                        well_layer_file = get_path(well_layer_file)
+                well_layer = make_new_well_layer(
+                    layer_file,
+                    self.all_wells_df,
+                    label,
+                )
 
-                        well_layer = make_new_well_layer(
-                            well_layer_file,
-                            self.drilled_wells_df,
-                            label=value,
-                        )
+                if well_layer:
+                    self.well_basic_layers.append(well_layer)
+                    self.layer_files.append(layer_file)
 
-                        if well_layer is not None:
-                            self.well_base_layers.append(well_layer)
+            self.intervals = self.well_layers_overview.get("additional")
+            self.interval_names = []
 
-            # Load planned wells layer (if wanted)
-            if "planned" in self.basic_well_layers:
-                try:
-                    planned_wells_df = self.all_wells_df.loc[
-                        self.all_wells_df["layer_name"] != "Drilled wells"
-                    ]
+            for interval in self.intervals:
+                interval_layers = self.create_additional_well_layers(interval)
+                self.all_interval_layers.append(interval_layers)
+                self.interval_names.append(interval)
 
-                except:
-                    planned_wells_df = None
-
-                if planned_wells_df is not None:
-                    key = "planned"
-                    interval = ""
-                    value = self.basic_well_layers.get(key)
-                    well_layer_file = get_well_layer_filename(
-                        self.wellfolder, key, interval
-                    )
-                    well_layer_file = get_path(well_layer_file)
-
-                    well_layer = make_new_well_layer(
-                        well_layer_file,
-                        planned_wells_df,
-                        label=value,
-                    )
-
-                    if well_layer is not None:
-                        self.well_base_layers.append(well_layer)
-
-        # Make production and injection layers for all intervals
-        self.all_interval_layers = []
-        interval_names = []
-        map_types = ["observed", "simulated"]
-
-        for map_type in map_types:
-            # intervals = self.selection_list[map_type]["interval"]
-            map_type_settings = self.selection_list.get(map_type)
-
-            if map_type_settings:
-                intervals = map_type_settings.get("interval")
-
-                if intervals:
-                    for interval in intervals:
-                        interval_names.append(interval)
-
-        self.interval_names = list(set(interval_names))
-
-        for interval_name in self.interval_names:
-            interval_layers = self.create_additional_well_layers(interval_name)
-            self.all_interval_layers.append(interval_layers)
-
-        # Create production and injection layers for the default interval
+        # Find production and injection layers for the default interval
         index = self.interval_names.index(default_interval)
         self.interval_well_layers = self.all_interval_layers[index]
 
@@ -431,6 +385,7 @@ class SurfaceViewer4D(WebvizPluginABC):
             )
             for fn in list(self.wellbore_info["file_name"]):
                 store_functions.append((get_path, [{"path": Path(fn)}]))
+
             store_functions.append(
                 (
                     get_path,
@@ -442,11 +397,16 @@ class SurfaceViewer4D(WebvizPluginABC):
             )
 
             store_functions.append(
-                (find_files, [{"folder": self.well_layer_dir, "suffix": ".csv"}])
+                (
+                    get_path,
+                    [
+                        {"path": Path(self.wellfolder) / "well_layers.yaml"},
+                    ],
+                )
             )
-            store_functions.append(
-                (get_path, [{"path": fn} for fn in self.well_layer_files])
-            )
+
+            for fn in self.layer_files:
+                store_functions.append((get_path, [{"path": Path(fn)}]))
 
         for fn in list(self.surface_metadata["filename"]):
             store_functions.append((get_path, [{"path": Path(fn)}]))
@@ -529,23 +489,24 @@ class SurfaceViewer4D(WebvizPluginABC):
         return heading, sim_info, label
 
     def create_additional_well_layers(self, interval):
+        interval_overview = self.well_layers_overview.get("additional").get(interval)
         interval_well_layers = []
 
         if get_dates(interval)[0] <= self.production_update:
-            for key, value in self.additional_well_layers.items():
-                well_layer_file = get_well_layer_filename(
-                    self.wellfolder, key, interval
-                )
-                well_layer_file = get_path(well_layer_file)
+            for key, value in interval_overview.items():
+                layer_dir = Path(self.wellfolder / "well_layers/additional" / interval)
+                well_layer_file = get_path(Path(layer_dir / value))
+                label = self.additional_well_layers.get(key)
 
                 well_layer = make_new_well_layer(
                     well_layer_file,
                     self.pdm_wells_df,
-                    label=value,
+                    label,
                 )
 
                 if well_layer is not None:
                     interval_well_layers.append(well_layer)
+                    self.layer_files.append(well_layer_file)
 
         return interval_well_layers
 
@@ -628,17 +589,20 @@ class SurfaceViewer4D(WebvizPluginABC):
 
                 surface_layers.append(layer)
 
-            if self.well_base_layers:
-                for well_layer in self.well_base_layers:
+            if self.basic_well_layers:
+                for well_layer in self.well_basic_layers:
                     surface_layers.append(well_layer)
 
             interval = data["date"]
 
-            # Load new interval layers if selected interval has changesd
+            # Load new interval layers if selected interval has changed
             if interval != self.selected_intervals[map_idx]:
-                index = self.interval_names.index(interval)
-                self.interval_well_layers = self.all_interval_layers[index]
-                self.selected_intervals[map_idx] = interval
+                if get_dates(interval)[0] <= self.production_update:
+                    index = self.interval_names.index(interval)
+                    self.interval_well_layers = self.all_interval_layers[index]
+                    self.selected_intervals[map_idx] = interval
+                else:
+                    self.interval_well_layers = []
 
             for interval_layer in self.interval_well_layers:
                 surface_layers.append(interval_layer)
