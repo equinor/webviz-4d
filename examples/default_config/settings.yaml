@@ -21,7 +21,7 @@ observed_maps:
 rms_polygons: share/results/polygons    
     
 depth_maps:
-    top_reservoir: ../fields/drogon/default_config/fmu_data/realization-0/iter-0/share/results/maps/topvolantis--ds_extract_geogrid.gri
+    top_reservoir: ./fmu_data/topvolantis--ds_extract_geogrid.gri     
 
 map_settings:
     colormaps_folder: ../colormaps/

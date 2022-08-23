@@ -12,4 +12,5 @@ observed_maps:
     map_directories: [share/observations/maps] 
     
     
-    
+depth_maps:
+    top_reservoir: realization-0/iter-0/share/results/maps/topvolantis--ds_extract_geogrid.gri   
