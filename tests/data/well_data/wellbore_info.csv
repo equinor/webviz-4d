@@ -1,0 +1,10 @@
+wellbore.name,wellbore.well_name,wellbore.slot_name,wellbore.rms_name,wellbore.true_name,wellbore.short_name,wellbore.type,wellbore.status,wellbore.fluids,wellbore.field,wellbore.rkb,wellbore.completion_date,wellbore.top_res_name,wellbore.top_res_md,layer_name,file_name,top_completion_md,base_completion_md,wellbore.pdm_name
+55/33-1,55/33-1,55/33-1,55_33-1,55/33-1,1,exploration,plugged and abandoned,oil,DROGON,25,2017-03-08T00:00:00,Depth surface,1625.55721794128,Drilled wells,tests/data/well_data/55_33-1.w,,,
+55/33-2,55/33-2,55/33-2,55_33-2,55/33-2,2,wildcat,plugged and abandoned,dry,DROGON,25,2017-03-08T00:00:00,Depth surface,1616.42538162231,Drilled wells,tests/data/well_data/55_33-2.w,,,
+55/33-3,55/33-3,55/33-3,55_33-3,55/33-3,3,wildcat,plugged and abandoned,oil,DROGON,25,2017-03-08T00:00:00,Depth surface,1683.30803003311,Drilled wells,tests/data/well_data/55_33-3.w,,,
+55/33-A-1,55/33-A-1,55/33-A-1,55_33-A-1,55/33-A-1,A-1,production,active,oil,DROGON,49,2017-03-08T00:00:00,Depth surface,1645.00597164645,Drilled wells,tests/data/well_data/55_33-A-1.w,,,55/33-A-1
+55/33-A-2,55/33-A-2,55/33-A-2,55_33-A-2,55/33-A-2,A-2,production,active,oil,DROGON,49,2017-03-08T00:00:03,Depth surface,1692.75503318787,Drilled wells,tests/data/well_data/55_33-A-2.w,,,55/33-A-2
+55/33-A-3,55/33-A-3,55/33-A-3,55_33-A-3,55/33-A-3,A-3,production,active,oil,DROGON,49,2017-03-08T00:00:04,Depth surface,1653.5992488597,Drilled wells,tests/data/well_data/55_33-A-3.w,,,55/33-A-3
+55/33-A-4,55/33-A-4,55/33-A-4,55_33-A-4,55/33-A-4,A-4,production,active,oil,DROGON,49,2017-03-08T00:00:05,Depth surface,2241.7696137409,Drilled wells,tests/data/well_data/55_33-A-4.w,,,55/33-A-4
+55/33-A-5,55/33-A-5,55/33-A-5,55_33-A-5,55/33-A-5,A-5,injection,active,water,DROGON,49,2017-03-08T00:00:06,Depth surface,1731.42462463382,Drilled wells,tests/data/well_data/55_33-A-5.w,,,55/33-A-5
+55/33-A-6,55/33-A-6,55/33-A-6,55_33-A-6,55/33-A-6,A-6,injection,active,water,DROGON,49,2017-03-08T00:00:07,Depth surface,1742.84511403446,Drilled wells,tests/data/well_data/55_33-A-6.w,,,55/33-A-6
