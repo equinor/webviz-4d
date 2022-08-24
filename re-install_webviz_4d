@@ -12,6 +12,7 @@ echo "Installing all necessary packages ..."
 
 pip install --upgrade pip
 pip install -r requirements.txt
+pip install webviz-config-equinor
 pip install -e .
 
 echo "WebViz-4D installation completed"

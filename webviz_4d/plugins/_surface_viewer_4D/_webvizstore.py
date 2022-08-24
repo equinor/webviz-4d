@@ -15,15 +15,18 @@ def get_path(path) -> Path:
 
 @webvizstore
 def read_csvs(folder: Path, csv_files: list) -> pd.DataFrame:
-    prod_df = pd.DataFrame()
+    all_prod_df = pd.DataFrame()
 
     for name in csv_files:
         csv_file = os.path.join(folder, name)
 
         if os.path.isfile(csv_file):
-            prod_df = prod_df.append(pd.read_csv(csv_file))
+            prod_df = pd.read_csv(csv_file)
+            all_prod_df = pd.concat([all_prod_df, prod_df])
 
-    return prod_df
+    all_prod_df.reset_index(inplace=True, drop=True)
+
+    return all_prod_df
 
 
 @webvizstore
