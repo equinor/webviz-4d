@@ -157,6 +157,8 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         # Read settings
         self.settings_path = settings
+        config_dir = os.path.dirname(os.path.abspath(self.settings_path))
+        self.well_layer_dir = Path(os.path.join(config_dir, "well_layers"))
 
         if self.settings_path:
             self.config = read_config(get_path(path=self.settings_path))
@@ -248,7 +250,6 @@ class SurfaceViewer4D(WebvizPluginABC):
         #    self.drilled_wells_info: dataframe with metadata for all drilled wells
 
         self.wellfolder = wellfolder
-        self.well_layer_dir = Path(os.path.join(wellfolder, "well_layers"))
         print("Reading well data from", self.wellfolder)
 
         if self.wellfolder:
@@ -289,7 +290,9 @@ class SurfaceViewer4D(WebvizPluginABC):
 
             self.pdm_wells_df = load_all_wells(self.pdm_wells_info)
 
-            layer_overview_file = get_path(Path(self.wellfolder / "well_layers.yaml"))
+            layer_overview_file = get_path(
+                Path(self.well_layer_dir / "well_layers.yaml")
+            )
             self.well_layers_overview = read_config(layer_overview_file)
 
             self.well_basic_layers = []
@@ -300,9 +303,7 @@ class SurfaceViewer4D(WebvizPluginABC):
             basic_layers = self.well_layers_overview.get("basic")
 
             for key, value in basic_layers.items():
-                layer_file = get_path(
-                    Path(self.wellfolder / "well_layers" / "basic" / value)
-                )
+                layer_file = get_path(Path(self.well_layer_dir / "basic" / value))
                 label = self.basic_well_layers.get(key)
 
                 well_layer = make_new_well_layer(
@@ -400,7 +401,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                 (
                     get_path,
                     [
-                        {"path": Path(self.wellfolder) / "well_layers.yaml"},
+                        {"path": Path(self.well_layer_dir) / "well_layers.yaml"},
                     ],
                 )
             )
@@ -494,7 +495,7 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         if get_dates(interval)[0] <= self.production_update:
             for key, value in interval_overview.items():
-                layer_dir = Path(self.wellfolder / "well_layers/additional" / interval)
+                layer_dir = Path(self.well_layer_dir / "additional" / interval)
                 well_layer_file = get_path(Path(layer_dir / value))
                 label = self.additional_well_layers.get(key)
 
