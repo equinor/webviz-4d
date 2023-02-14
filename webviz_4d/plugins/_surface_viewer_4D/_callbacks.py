@@ -26,7 +26,6 @@ def set_first_map(parent, app):
         real,
         attribute_settings,
     ):
-
         return parent.make_map(data, ensemble, real, attribute_settings, 0)
 
 
@@ -53,7 +52,6 @@ def set_second_map(parent, app):
         real,
         attribute_settings,
     ):
-
         return parent.make_map(data, ensemble, real, attribute_settings, 1)
 
 

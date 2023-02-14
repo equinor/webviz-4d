@@ -8,7 +8,6 @@ from webviz_4d._datainput.common import get_dates
 def create_map_settings(
     attribute, name, map_type, ensemble, realization, default_interval
 ):
-
     map_dict = {
         "attribute": attribute,
         "name": name,
@@ -178,7 +177,6 @@ def get_selected_metadata(metadata_df, surfacepath):
 
 
 def get_selected_interval(dates, indices):
-
     if indices[0] > indices[1]:
         difference = "reverse"
     else:

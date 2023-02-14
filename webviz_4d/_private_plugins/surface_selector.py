@@ -41,7 +41,6 @@ class SurfaceSelector:
             - somedate"""
 
     def __init__(self, app, selections, map_defaults):
-
         self.selections = selections
         self.map_defaults = map_defaults
         # self.intervals = intervals
@@ -292,7 +291,6 @@ class SurfaceSelector:
             ],
         )
         def _set_data(attr, name, date):
-
             """
             Stores current selections to dcc.Store. The information can
             be retrieved as a json string from a dash callback Input.

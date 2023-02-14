@@ -65,7 +65,6 @@ class SurfaceViewer4D(WebvizPluginABC):
         interval_mode: str = "reverse",
         selector_file: Path = None,
     ):
-
         super().__init__()
         self.shared_settings = app.webviz_settings["shared_settings"]
         self.fmu_directory = self.shared_settings["fmu_directory"]
