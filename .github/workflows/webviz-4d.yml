@@ -64,5 +64,5 @@ jobs:
       - name: 🤖 Run tests
         run: |
           webviz preferences --theme default
-          pytest ./tests --headless --forked
+          pytest ./tests --headless
           webviz schema
