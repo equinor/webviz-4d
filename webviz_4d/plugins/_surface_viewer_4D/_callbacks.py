@@ -22,11 +22,11 @@ def set_first_map(parent, app):
     # pylint: disable=too-many-arguments, too-many-locals
     def _set_base_layer(
         data,
-        ensemble,
+        iteration,
         real,
         attribute_settings,
     ):
-        return parent.make_map(data, ensemble, real, attribute_settings, 0)
+        return parent.make_map(data, iteration, real, attribute_settings, 0)
 
 
 def set_second_map(parent, app):
