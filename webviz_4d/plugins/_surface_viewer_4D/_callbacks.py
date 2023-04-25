@@ -14,7 +14,7 @@ def set_first_map(parent, app):
         ],
         [
             Input(parent.selector.storage_id, "children"),
-            Input(parent.uuid("ensemble"), "value"),
+            Input(parent.uuid("iteration"), "value"),
             Input(parent.uuid("realization"), "value"),
             Input(parent.uuid("attribute-settings"), "data"),
         ],
@@ -40,7 +40,7 @@ def set_second_map(parent, app):
         ],
         [
             Input(parent.selector2.storage_id, "children"),
-            Input(parent.uuid("ensemble2"), "value"),
+            Input(parent.uuid("iteration2"), "value"),
             Input(parent.uuid("realization2"), "value"),
             Input(parent.uuid("attribute-settings"), "data"),
         ],
@@ -48,11 +48,11 @@ def set_second_map(parent, app):
     # pylint: disable=too-many-arguments, too-many-locals
     def _set_base_layer(
         data,
-        ensemble,
+        iteration,
         real,
         attribute_settings,
     ):
-        return parent.make_map(data, ensemble, real, attribute_settings, 1)
+        return parent.make_map(data, iteration, real, attribute_settings, 1)
 
 
 def set_third_map(parent, app):
@@ -66,7 +66,7 @@ def set_third_map(parent, app):
         ],
         [
             Input(parent.selector3.storage_id, "children"),
-            Input(parent.uuid("ensemble3"), "value"),
+            Input(parent.uuid("iteration3"), "value"),
             Input(parent.uuid("realization3"), "value"),
             Input(parent.uuid("attribute-settings"), "data"),
         ],
@@ -74,11 +74,11 @@ def set_third_map(parent, app):
     # pylint: disable=too-many-arguments, too-many-locals
     def _set_base_layer(
         data,
-        ensemble,
+        iteration,
         real,
         attribute_settings,
     ):
-        return parent.make_map(data, ensemble, real, attribute_settings, 2)
+        return parent.make_map(data, iteration, real, attribute_settings, 2)
 
 
 def change_maps_from_button(parent, app):
@@ -98,11 +98,11 @@ def change_maps_from_button(parent, app):
         return current_value
 
     for btn_name in [
-        "ensemble",
+        "iteration",
         "realization",
-        "ensemble2",
+        "iteration2",
         "realization2",
-        "ensemble3",
+        "iteration3",
         "realization3",
     ]:
         app.callback(

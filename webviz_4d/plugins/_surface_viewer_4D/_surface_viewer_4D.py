@@ -184,17 +184,17 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.maps_metadata_list = []
 
         if map1_defaults is not None:
-            map1_defaults["interval"] = default_interval
+            # map1_defaults["interval"] = self.selection_list[map1_defaults["map_type"]]
             self.map_defaults.append(map1_defaults)
             self.map1_options = self.selection_list[map1_defaults["map_type"]]
 
         if map2_defaults is not None:
-            map2_defaults["interval"] = default_interval
+            # map2_defaults["interval"] = default_interval
             self.map_defaults.append(map2_defaults)
             self.map2_options = self.selection_list[map2_defaults["map_type"]]
 
         if map3_defaults is not None:
-            map3_defaults["interval"] = default_interval
+            # map3_defaults["interval"] = default_interval
             self.map_defaults.append(map3_defaults)
             self.map2_options = self.selection_list[map2_defaults["map_type"]]
 
@@ -203,7 +203,6 @@ class SurfaceViewer4D(WebvizPluginABC):
         if map1_defaults is None or map2_defaults is None or map3_defaults is None:
             self.map_defaults = get_map_defaults(
                 self.selection_list,
-                default_interval,
                 self.observations,
                 self.simulations,
             )
@@ -433,7 +432,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         name = data["name"]
         attribute = data["attr"]
 
-        if self.interval_mode == "reverse":
+        if self.interval_mode == "normal":
             time2 = selected_interval[0:10]
             time1 = selected_interval[11:]
         else:
@@ -450,7 +449,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                 & (self.surface_metadata["data.time.t1"] == time1)
                 & (self.surface_metadata["data.time.t2"] == time2)
                 & (self.surface_metadata["data.name"] == name)
-                & (self.surface_metadata["data.content"] == attribute)
+                & (self.surface_metadata["data.attribute"] == attribute)
             ]
 
             filepath = selected_metadata["filename"].values[0]
@@ -529,14 +528,16 @@ class SurfaceViewer4D(WebvizPluginABC):
             zone = data.get("name")
 
             selected_data = colormap_settings[
-                (colormap_settings["map type"] == map_type)
-                & (colormap_settings["attribute"] == data["attr"])
+                (colormap_settings["map_type"] == map_type)
+                & (colormap_settings["data.attribute"] == data["attr"])
                 & (colormap_settings["interval"] == interval)
-                & (colormap_settings["name"] == zone)
+                & (colormap_settings["data.name"] == zone)
             ]
 
             if "std" in realization:
                 settings = selected_data[selected_data["realization"] == "std"]
+            elif map_type == "observed":
+                settings = selected_data[selected_data["realization"] == realization]
             else:
                 settings = selected_data[
                     selected_data["realization"] == "realization-0"
@@ -556,7 +557,6 @@ class SurfaceViewer4D(WebvizPluginABC):
         map_type = self.map_defaults[map_idx]["map_type"]
 
         surface_file = self.get_real_runpath(data, iteration, real, map_type)
-        print("DEBUG - surface_file", surface_file)
 
         if os.path.isfile(surface_file):
             surface = load_surface(surface_file)

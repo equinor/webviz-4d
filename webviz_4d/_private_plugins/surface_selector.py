@@ -43,7 +43,6 @@ class SurfaceSelector:
     def __init__(self, app, selections, map_defaults):
         self.selections = selections
         self.map_defaults = map_defaults
-        print("DEBUG - surface_selector: map_defaults", map_defaults)
         # self.intervals = intervals
         self.current_selections = map_defaults
         self._storage_id = f"{str(uuid4())}-surface-selector"
@@ -80,7 +79,7 @@ class SurfaceSelector:
 
     def _interval_in_attr(self):
         map_type = self.map_defaults["map_type"]
-        return self.selections[map_type]["interval"]
+        return unique_values(self.selections[map_type]["interval"])
 
     @property
     def attribute_selector(self):
