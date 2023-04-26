@@ -49,25 +49,25 @@ class SurfaceViewer4D(WebvizPluginABC):
     def __init__(
         self,
         app,
-        wellfolder: Path = None,
+        well_data: Path = None,
         production_data: Path = None,
-        polygons_folder: Path = None,
-        colormaps_folder: Path = None,
+        polygon_data: Path = None,
+        colormap_data: Path = None,
         map1_defaults: dict = None,
         map2_defaults: dict = None,
         map3_defaults: dict = None,
         map_suffix: str = ".gri",
         default_interval: str = None,
-        settings: Path = None,
+        settings_file: Path = None,
         delimiter: str = "--",
         surface_metadata_file: Path = None,
-        attribute_maps_file: Path = None,
-        interval_mode: str = "reverse",
+        surface_scaling_file: Path = None,
+        interval_mode: str = "normal",
         selector_file: Path = None,
     ):
         super().__init__()
-        self.shared_settings = app.webviz_settings["shared_settings"]
-        self.fmu_directory = self.shared_settings["fmu_directory"]
+        self.shared_settings = app.webviz_settings.get("shared_settings")
+        self.fmu_directory = self.shared_settings.get("fmu_directory")
         self.label = self.shared_settings.get("label", self.fmu_directory)
 
         self.basic_well_layers = self.shared_settings.get("basic_well_layers", None)
@@ -88,7 +88,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.production_update = ""
         self.selected_names = [None, None, None]
         self.selected_attributes = [None, None, None]
-        self.selected_ensembles = [None, None, None]
+        self.selected_iterations = [None, None, None]
         self.selected_realizations = [None, None, None]
         self.well_base_layers = []
         self.interval_well_layers = {}
@@ -138,24 +138,24 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.selection_list = read_config(get_path(path=self.selector_file))
 
         # Read custom colormaps
-        self.colormaps_folder = colormaps_folder
-        if self.colormaps_folder is not None:
+        self.colormap_data = colormap_data
+        if self.colormap_data is not None:
             self.colormap_files = [
                 get_path(Path(fn))
-                for fn in json.load(find_files(self.colormaps_folder, ".csv"))
+                for fn in json.load(find_files(self.colormap_data, ".csv"))
             ]
-            print("Reading custom colormaps from:", self.colormaps_folder)
+            print("Reading custom colormaps from:", self.colormap_data)
             load_custom_colormaps(self.colormap_files)
 
         # Read attribute maps settings (min-/max-values)
         self.colormap_settings = None
-        self.attribute_maps_file = attribute_maps_file
-        if self.attribute_maps_file is not None:
-            self.colormap_settings = read_csv(csv_file=self.attribute_maps_file)
-            print("Colormaps settings loaded from file", self.attribute_maps_file)
+        self.surface_scaling_file = surface_scaling_file
+        if self.surface_scaling_file is not None:
+            self.colormap_settings = read_csv(csv_file=self.surface_scaling_file)
+            print("Colormaps settings loaded from file", self.surface_scaling_file)
 
         # Read settings
-        self.settings_path = settings
+        self.settings_path = settings_file
         config_dir = os.path.dirname(os.path.abspath(self.settings_path))
         self.well_layer_dir = Path(os.path.join(config_dir, "well_layers"))
 
@@ -184,17 +184,17 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.maps_metadata_list = []
 
         if map1_defaults is not None:
-            map1_defaults["interval"] = default_interval
+            # map1_defaults["interval"] = self.selection_list[map1_defaults["map_type"]]
             self.map_defaults.append(map1_defaults)
             self.map1_options = self.selection_list[map1_defaults["map_type"]]
 
         if map2_defaults is not None:
-            map2_defaults["interval"] = default_interval
+            # map2_defaults["interval"] = default_interval
             self.map_defaults.append(map2_defaults)
             self.map2_options = self.selection_list[map2_defaults["map_type"]]
 
         if map3_defaults is not None:
-            map3_defaults["interval"] = default_interval
+            # map3_defaults["interval"] = default_interval
             self.map_defaults.append(map3_defaults)
             self.map2_options = self.selection_list[map2_defaults["map_type"]]
 
@@ -203,7 +203,6 @@ class SurfaceViewer4D(WebvizPluginABC):
         if map1_defaults is None or map2_defaults is None or map3_defaults is None:
             self.map_defaults = get_map_defaults(
                 self.selection_list,
-                default_interval,
                 self.observations,
                 self.simulations,
             )
@@ -218,22 +217,22 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.colors = get_well_colors(self.config)
 
         # Load polygons
-        self.polygons_folder = polygons_folder
+        self.polygon_data = polygon_data
         self.polygon_layers = None
         self.zone_polygon_layers = None
 
-        if self.polygons_folder is not None:
+        if self.polygon_data is not None:
             self.polygon_files = [
                 get_path(Path(fn))
-                for fn in json.load(find_files(self.polygons_folder, ".csv"))
+                for fn in json.load(find_files(self.polygon_data, ".csv"))
             ]
-            print("Reading polygons from:", self.polygons_folder)
+            print("Reading polygons from:", self.polygon_data)
             polygon_colors = self.config.get("polygon_colors")
             self.polygon_layers = load_polygons(self.polygon_files, polygon_colors)
 
             # Load zone fault if existing
 
-            self.zone_faults_folder = Path(os.path.join(self.polygons_folder, "rms"))
+            self.zone_faults_folder = Path(os.path.join(self.polygon_data, "rms"))
             self.zone_faults_files = [
                 get_path(Path(fn))
                 for fn in json.load(find_files(self.zone_faults_folder, ".csv"))
@@ -248,23 +247,23 @@ class SurfaceViewer4D(WebvizPluginABC):
         #    self.drilled_wells_df: dataframe with wellpaths (x- and y positions) for all drilled wells
         #    self.drilled_wells_info: dataframe with metadata for all drilled wells
 
-        self.wellfolder = wellfolder
-        print("Reading well data from", self.wellfolder)
+        self.well_data = well_data
+        print("Reading well data from", self.well_data)
 
-        if self.wellfolder:
+        if self.well_data:
             self.wellbore_info = read_csv(
-                csv_file=Path(self.wellfolder) / "wellbore_info.csv"
+                csv_file=Path(self.well_data) / "wellbore_info.csv"
             )
             update_dates = get_update_dates(
-                welldata=get_path(Path(self.wellfolder) / ".welldata_update.yaml"),
+                welldata=get_path(Path(self.well_data) / ".welldata_update.yaml"),
                 productiondata=get_path(
-                    Path(self.wellfolder) / ".production_update.yaml"
+                    Path(self.well_data) / ".production_update.yaml"
                 ),
             )
             self.well_update = update_dates["well_update_date"]
             self.production_update = update_dates["production_last_date"]
             self.all_wells_info = read_csv(
-                csv_file=Path(self.wellfolder) / "wellbore_info.csv"
+                csv_file=Path(self.well_data) / "wellbore_info.csv"
             )
 
             self.all_wells_info["file_name"] = self.all_wells_info["file_name"].apply(
@@ -342,7 +341,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         ]
         for fn in [
             self.surface_metadata_file,
-            self.attribute_maps_file,
+            self.surface_scaling_file,
         ]:
             if fn is not None:
                 store_functions.append(
@@ -353,17 +352,17 @@ class SurfaceViewer4D(WebvizPluginABC):
                         ],
                     )
                 )
-        if self.colormaps_folder is not None:
+        if self.colormap_data is not None:
             store_functions.append(
-                (find_files, [{"folder": self.colormaps_folder, "suffix": ".csv"}])
+                (find_files, [{"folder": self.colormap_data, "suffix": ".csv"}])
             )
             store_functions.append(
                 (get_path, [{"path": fn} for fn in self.colormap_files])
             )
 
-        if self.polygons_folder is not None:
+        if self.polygon_data is not None:
             store_functions.append(
-                (find_files, [{"folder": self.polygons_folder, "suffix": ".csv"}])
+                (find_files, [{"folder": self.polygon_data, "suffix": ".csv"}])
             )
             store_functions.append(
                 (get_path, [{"path": fn} for fn in self.polygon_files])
@@ -379,9 +378,9 @@ class SurfaceViewer4D(WebvizPluginABC):
         if self.selector_file is not None:
             store_functions.append((get_path, [{"path": self.selector_file}]))
 
-        if self.wellfolder is not None:
+        if self.well_data is not None:
             store_functions.append(
-                (read_csv, [{"csv_file": Path(self.wellfolder) / "wellbore_info.csv"}])
+                (read_csv, [{"csv_file": Path(self.well_data) / "wellbore_info.csv"}])
             )
             for fn in list(self.wellbore_info["file_name"]):
                 store_functions.append((get_path, [{"path": Path(fn)}]))
@@ -390,8 +389,8 @@ class SurfaceViewer4D(WebvizPluginABC):
                 (
                     get_path,
                     [
-                        {"path": Path(self.wellfolder) / ".welldata_update.yaml"},
-                        {"path": Path(self.wellfolder) / ".production_update.yaml"},
+                        {"path": Path(self.well_data) / ".welldata_update.yaml"},
+                        {"path": Path(self.well_data) / ".production_update.yaml"},
                     ],
                 )
             )
@@ -416,9 +415,9 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         return store_functions
 
-    def ensembles(self, map_number):
+    def iterations(self, map_number):
         map_type = self.map_defaults[map_number]["map_type"]
-        return self.selection_list[map_type]["ensemble"]
+        return self.selection_list[map_type]["iteration"]
 
     def realizations(self, map_number):
         map_type = self.map_defaults[map_number]["map_type"]
@@ -428,12 +427,12 @@ class SurfaceViewer4D(WebvizPluginABC):
     def layout(self):
         return set_layout(parent=self)
 
-    def get_real_runpath(self, data, ensemble, real, map_type):
+    def get_real_runpath(self, data, iteration, real, map_type):
         selected_interval = data["date"]
         name = data["name"]
         attribute = data["attr"]
 
-        if self.interval_mode == "reverse":
+        if self.interval_mode == "normal":
             time2 = selected_interval[0:10]
             time1 = selected_interval[11:]
         else:
@@ -445,12 +444,12 @@ class SurfaceViewer4D(WebvizPluginABC):
         try:
             selected_metadata = self.surface_metadata[
                 (self.surface_metadata["fmu_id.realization"] == real)
-                & (self.surface_metadata["fmu_id.ensemble"] == ensemble)
+                & (self.surface_metadata["fmu_id.iteration"] == iteration)
                 & (self.surface_metadata["map_type"] == map_type)
                 & (self.surface_metadata["data.time.t1"] == time1)
                 & (self.surface_metadata["data.time.t2"] == time2)
                 & (self.surface_metadata["data.name"] == name)
-                & (self.surface_metadata["data.content"] == attribute)
+                & (self.surface_metadata["data.attribute"] == attribute)
             ]
 
             filepath = selected_metadata["filename"].values[0]
@@ -459,7 +458,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         except:
             path = ""
             print("WARNING: selected map not found. Selection criteria are:")
-            print(map_type, real, ensemble, name, attribute, time1, time2)
+            print(map_type, real, iteration, name, attribute, time1, time2)
 
         return path
 
@@ -470,7 +469,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         else:
             txt = "Simulated map: "
             info = (
-                self.selected_ensembles[map_ind]
+                self.selected_iterations[map_ind]
                 + " "
                 + self.selected_realizations[map_ind]
             )
@@ -529,14 +528,16 @@ class SurfaceViewer4D(WebvizPluginABC):
             zone = data.get("name")
 
             selected_data = colormap_settings[
-                (colormap_settings["map type"] == map_type)
-                & (colormap_settings["attribute"] == data["attr"])
+                (colormap_settings["map_type"] == map_type)
+                & (colormap_settings["data.attribute"] == data["attr"])
                 & (colormap_settings["interval"] == interval)
-                & (colormap_settings["name"] == zone)
+                & (colormap_settings["data.name"] == zone)
             ]
 
             if "std" in realization:
                 settings = selected_data[selected_data["realization"] == "std"]
+            elif map_type == "observed":
+                settings = selected_data[selected_data["realization"] == realization]
             else:
                 settings = selected_data[
                     selected_data["realization"] == "realization-0"
@@ -546,7 +547,7 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         return min_max
 
-    def make_map(self, data, ensemble, real, attribute_settings, map_idx):
+    def make_map(self, data, iteration, real, attribute_settings, map_idx):
         t0 = time.time()
         data = json.loads(data)
 
@@ -555,7 +556,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         attribute_settings = json.loads(attribute_settings)
         map_type = self.map_defaults[map_idx]["map_type"]
 
-        surface_file = self.get_real_runpath(data, ensemble, real, map_type)
+        surface_file = self.get_real_runpath(data, iteration, real, map_type)
 
         if os.path.isfile(surface_file):
             surface = load_surface(surface_file)
@@ -609,7 +610,7 @@ class SurfaceViewer4D(WebvizPluginABC):
 
             self.selected_names[map_idx] = data["name"]
             self.selected_attributes[map_idx] = data["attr"]
-            self.selected_ensembles[map_idx] = ensemble
+            self.selected_iterations[map_idx] = iteration
             self.selected_realizations[map_idx] = real
             self.selected_intervals[map_idx] = interval
 
