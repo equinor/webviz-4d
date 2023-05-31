@@ -211,6 +211,7 @@ class SurfaceViewer4D(WebvizPluginABC):
             ]
             print("Reading polygons from:", self.polygon_data)
             polygon_colors = self.settings.get("polygon_colors")
+
             self.polygon_layers = load_polygons(self.polygon_files, polygon_colors)
 
             # Load zone fault if existing
