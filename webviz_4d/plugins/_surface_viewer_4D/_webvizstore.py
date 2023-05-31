@@ -31,7 +31,7 @@ def read_csvs(folder: Path, csv_files: list) -> pd.DataFrame:
 
 @webvizstore
 def read_csv(csv_file: Path) -> pd.DataFrame:
-    return pd.read_csv(csv_file)
+    return pd.read_csv(csv_file, low_memory=False)
 
 
 @webvizstore

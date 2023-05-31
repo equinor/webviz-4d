@@ -31,7 +31,7 @@ def ensemble_layout(
             html.Div(
                 [
                     html.Label(
-                        "Ensemble / Iteration",
+                        "Iteration",
                         style={"fontSize": 15, "fontWeight": "bold"},
                     ),
                     html.Div(
@@ -40,9 +40,9 @@ def ensemble_layout(
                             dcc.Dropdown(
                                 options=[
                                     {"label": ens, "value": ens}
-                                    for ens in parent.ensembles(map_number)
+                                    for ens in parent.iterations(map_number)
                                 ],
-                                value=parent.map_defaults[map_number]["ensemble"],
+                                value=parent.map_defaults[map_number]["iteration"],
                                 id=ensemble_id,
                                 clearable=False,
                                 persistence=True,
