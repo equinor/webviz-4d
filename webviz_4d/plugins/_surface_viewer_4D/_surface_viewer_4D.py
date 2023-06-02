@@ -156,49 +156,29 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         # Read settings
         self.settings_path = settings_file
-        config_dir = os.path.dirname(os.path.abspath(self.settings_path))
+        config_dir = os.path.dirname(os.path.abspath(self.selector_file))
         self.well_layer_dir = Path(os.path.join(config_dir, "well_layers"))
 
         if self.settings_path:
-            self.config = read_config(get_path(path=self.settings_path))
-            self.attribute_settings = None
+            self.settings = read_config(get_path(path=self.settings_path))
             self.delimiter = None
-
-            map_settings = self.config.get("map_settings")
-            self.attribute_settings = map_settings.get("attribute_settings")
-            self.default_colormap = map_settings.get("default_colormap", "seismic")
-
-        # Read settings (defaults)
-        if default_interval is None:
-            try:
-                default_interval = self.selection_list[self.observations]["interval"][0]
-            except:
-                try:
-                    default_interval = self.selection_list[self.simulations][
-                        "interval"
-                    ][0]
-                except:
-                    default_interval = None
+            self.attribute_settings = self.settings.get("attribute_settings")
+            self.default_colormap = self.settings.get("default_colormap", "seismic_r")
 
         self.map_defaults = []
         self.maps_metadata_list = []
 
         if map1_defaults is not None:
-            # map1_defaults["interval"] = self.selection_list[map1_defaults["map_type"]]
             self.map_defaults.append(map1_defaults)
             self.map1_options = self.selection_list[map1_defaults["map_type"]]
 
         if map2_defaults is not None:
-            # map2_defaults["interval"] = default_interval
             self.map_defaults.append(map2_defaults)
             self.map2_options = self.selection_list[map2_defaults["map_type"]]
 
         if map3_defaults is not None:
-            # map3_defaults["interval"] = default_interval
             self.map_defaults.append(map3_defaults)
             self.map2_options = self.selection_list[map2_defaults["map_type"]]
-
-        print("Default interval", default_interval)
 
         if map1_defaults is None or map2_defaults is None or map3_defaults is None:
             self.map_defaults = get_map_defaults(
@@ -212,9 +192,12 @@ class SurfaceViewer4D(WebvizPluginABC):
             self.map_defaults.append(map2_defaults)
             self.map_defaults.append(map3_defaults)
 
-        self.selected_intervals = [default_interval, default_interval, default_interval]
-
-        self.colors = get_well_colors(self.config)
+        self.selected_intervals = [
+            map1_defaults["interval"],
+            map2_defaults["interval"],
+            map3_defaults["interval"],
+        ]
+        self.colors = get_well_colors(self.settings)
 
         # Load polygons
         self.polygon_data = polygon_data
@@ -227,7 +210,8 @@ class SurfaceViewer4D(WebvizPluginABC):
                 for fn in json.load(find_files(self.polygon_data, ".csv"))
             ]
             print("Reading polygons from:", self.polygon_data)
-            polygon_colors = self.config.get("polygon_colors")
+            polygon_colors = self.settings.get("polygon_colors")
+
             self.polygon_layers = load_polygons(self.polygon_files, polygon_colors)
 
             # Load zone fault if existing
@@ -322,9 +306,9 @@ class SurfaceViewer4D(WebvizPluginABC):
                 self.all_interval_layers.append(interval_layers)
                 self.interval_names.append(interval)
 
-        # Find production and injection layers for the default interval
-        index = self.interval_names.index(default_interval)
-        self.interval_well_layers = self.all_interval_layers[index]
+        self.selected_intervals[0] = ""
+        self.selected_intervals[1] = ""
+        self.selected_intervals[2] = ""
 
         # Create selectors (attributes, names and dates) for all 3 maps
         self.selector = SurfaceSelector(app, self.selection_list, self.map_defaults[0])
@@ -483,7 +467,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         )
 
         sim_info = info
-        label = get_plot_label(self.config, self.selected_intervals[map_ind])
+        label = get_plot_label(self.settings, self.selected_intervals[map_ind])
 
         return heading, sim_info, label
 
@@ -552,7 +536,6 @@ class SurfaceViewer4D(WebvizPluginABC):
         data = json.loads(data)
 
         selected_zone = data.get("name")
-
         attribute_settings = json.loads(attribute_settings)
         map_type = self.map_defaults[map_idx]["map_type"]
 
@@ -596,7 +579,7 @@ class SurfaceViewer4D(WebvizPluginABC):
 
             interval = data["date"]
 
-            # Load new interval layers if selected interval has changed
+            # Load new interval layers if selected interval has changed (or has not been set)
             if interval != self.selected_intervals[map_idx]:
                 if get_dates(interval)[0] <= self.production_update:
                     index = self.interval_names.index(interval)
