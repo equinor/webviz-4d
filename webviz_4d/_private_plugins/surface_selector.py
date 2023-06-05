@@ -79,7 +79,7 @@ class SurfaceSelector:
 
     def _interval_in_attr(self):
         map_type = self.map_defaults["map_type"]
-        return self.selections[map_type]["interval"]
+        return unique_values(self.selections[map_type]["interval"])
 
     @property
     def attribute_selector(self):
