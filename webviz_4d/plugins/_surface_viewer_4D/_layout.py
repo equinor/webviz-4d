@@ -16,10 +16,10 @@ def set_grid_layout(columns):
     }
 
 
-def ensemble_layout(
+def iteration_layout(
     parent,
     map_number,
-    ensemble_id,
+    iteration_id,
     ens_prev_id,
     ens_next_id,
     real_id,
@@ -43,7 +43,7 @@ def ensemble_layout(
                                     for ens in parent.iterations(map_number)
                                 ],
                                 value=parent.map_defaults[map_number]["iteration"],
-                                id=ensemble_id,
+                                id=iteration_id,
                                 clearable=False,
                                 persistence=True,
                                 persistence_type="session",
@@ -139,12 +139,12 @@ def set_layout(parent):
                         style={"margin": "10px", "flex": 4},
                         children=[
                             parent.selector.layout,
-                            ensemble_layout(
+                            iteration_layout(
                                 parent=parent,
                                 map_number=0,
-                                ensemble_id=parent.uuid("ensemble"),
-                                ens_prev_id=parent.uuid("ensemble-prev"),
-                                ens_next_id=parent.uuid("ensemble-next"),
+                                iteration_id=parent.uuid("iteration"),
+                                ens_prev_id=parent.uuid("iteration-prev"),
+                                ens_next_id=parent.uuid("iteration-next"),
                                 real_id=parent.uuid("realization"),
                                 real_prev_id=parent.uuid("realization-prev"),
                                 real_next_id=parent.uuid("realization-next"),
@@ -156,12 +156,12 @@ def set_layout(parent):
                         id=parent.uuid("settings-view2"),
                         children=[
                             parent.selector2.layout,
-                            ensemble_layout(
+                            iteration_layout(
                                 parent=parent,
                                 map_number=1,
-                                ensemble_id=parent.uuid("ensemble2"),
-                                ens_prev_id=parent.uuid("ensemble2-prev"),
-                                ens_next_id=parent.uuid("ensemble2-next"),
+                                iteration_id=parent.uuid("iteration2"),
+                                ens_prev_id=parent.uuid("iteration2-prev"),
+                                ens_next_id=parent.uuid("iteration2-next"),
                                 real_id=parent.uuid("realization2"),
                                 real_prev_id=parent.uuid("realization2-prev"),
                                 real_next_id=parent.uuid("realization2-next"),
@@ -173,12 +173,12 @@ def set_layout(parent):
                         id=parent.uuid("settings-view3"),
                         children=[
                             parent.selector3.layout,
-                            ensemble_layout(
+                            iteration_layout(
                                 parent=parent,
                                 map_number=2,
-                                ensemble_id=parent.uuid("ensemble3"),
-                                ens_prev_id=parent.uuid("ensemble3-prev"),
-                                ens_next_id=parent.uuid("ensemble3-next"),
+                                iteration_id=parent.uuid("iteration3"),
+                                ens_prev_id=parent.uuid("iteration3-prev"),
+                                ens_next_id=parent.uuid("iteration3-next"),
                                 real_id=parent.uuid("realization3"),
                                 real_prev_id=parent.uuid("realization3-prev"),
                                 real_next_id=parent.uuid("realization3-next"),

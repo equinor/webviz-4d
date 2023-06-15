@@ -20,12 +20,12 @@ def create_map_settings(
     return map_dict
 
 
-def get_map_defaults(selection_options, default_interval, observations, simulations):
+def get_map_defaults(selection_options, observations, simulations):
     observed_options = selection_options[observations]
     simulated_options = selection_options[simulations]
 
-    realizations = get_realizations(metadata_df, simulations)
-    ensembles = get_ensembles(metadata_df, simulations)
+    # realizations = get_realizations(selection_options, simulations)
+    # ensembles = get_ensembles(selection_options, simulations)
 
     map_defaults = []
 
@@ -34,59 +34,33 @@ def get_map_defaults(selection_options, default_interval, observations, simulati
         realization = observed_options["realization"][0]
         attribute = observed_options["attribute"][0]
         name = observed_options["name"][0]
+        interval = observed_options["interval"][0]
 
         map_default = create_map_settings(
-            observed_attribute,
-            observed_name,
+            attribute,
+            name,
             observations,
             ensemble,
             realization,
-            default_interval,
+            interval,
         )
         map_defaults.append(map_default)
 
-        if simulated_options:
-            ensemble = simulated_options["ensemble"][0]
-            realization = simulated_options["realization"][0]
-            attribute = simulated_options["attribute"][0]
-            name = simulated_options["name"][0]
-
-            map_default = create_map_settings(
-                observed_attribute,
-                observed_name,
-                observations,
-                ensemble,
-                realization,
-                default_interval,
-            )
-            map_defaults.append(map_default)
-            map_defaults.append(map_default)
-
-    elif simulated_options:
+    if simulated_options:
         ensemble = simulated_options["ensemble"][0]
         realization = simulated_options["realization"][0]
         attribute = simulated_options["attribute"][0]
         name = simulated_options["name"][0]
+        interval = simulated_options["interval"][0]
 
         map_default = create_map_settings(
-            observed_attribute,
-            observed_name,
+            attribute,
+            name,
             observations,
             ensemble,
             realization,
-            default_interval,
+            interval,
         )
-
-        map_default = create_map_settings(
-            simulated_attribute,
-            simulated_name,
-            simulations,
-            ensemble,
-            realization,
-            default_interval,
-        )
-        map_defaults.append(map_default)
-        map_defaults.append(map_default)
         map_defaults.append(map_default)
 
     return map_defaults

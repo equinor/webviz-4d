@@ -222,6 +222,8 @@ class SurfaceViewer4D(WebvizPluginABC):
 
             polygon_colors = self.settings.get("polygon_colors")
 
+            self.polygon_layers = load_polygons(self.polygon_files, polygon_colors)
+
             self.polygon_layers = load_polygons(
                 self.polygon_data, polygon_configuration, polygon_colors
             )
