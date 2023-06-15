@@ -13,6 +13,7 @@ from webviz_4d._datainput.common import (
     get_update_dates,
     get_plot_label,
     get_dates,
+    get_last_date,
 )
 
 from webviz_4d._datainput.well import load_all_wells
@@ -27,6 +28,8 @@ from webviz_4d._datainput._polygons import (
     load_polygons,
     load_zone_polygons,
     get_zone_layer,
+    create_polygon_layer,
+    make_new_polyline_layer,
 )
 
 from webviz_4d._datainput._metadata import (
@@ -52,12 +55,12 @@ class SurfaceViewer4D(WebvizPluginABC):
         well_data: Path = None,
         production_data: Path = None,
         polygon_data: Path = None,
+        polygon_mapping_file: Path = None,
         colormap_data: Path = None,
         map1_defaults: dict = None,
         map2_defaults: dict = None,
         map3_defaults: dict = None,
         map_suffix: str = ".gri",
-        default_interval: str = None,
         settings_file: Path = None,
         delimiter: str = "--",
         surface_metadata_file: Path = None,
@@ -76,6 +79,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.map_suffix = map_suffix
         self.delimiter = delimiter
         self.interval_mode = interval_mode
+        self.polygon_mapping_file = polygon_mapping_file
 
         self.number_of_maps = 3
         self.observations = "observed"
@@ -119,6 +123,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.all_well_layers = self.basic_well_layers.update(
             self.additional_well_layers
         )
+        print("Reading polygon mapping from", self.polygon_mapping_file)
 
         # Read production data
         self.prod_names = ["BORE_OIL_VOL.csv", "BORE_GI_VOL.csv", "BORE_WI_VOL.csv"]
@@ -137,6 +142,8 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.selector_file = selector_file
         self.selection_list = read_config(get_path(path=self.selector_file))
 
+        self.last_observed_date = get_last_date(self.selection_list)
+
         # Read custom colormaps
         self.colormap_data = colormap_data
         if self.colormap_data is not None:
@@ -154,10 +161,11 @@ class SurfaceViewer4D(WebvizPluginABC):
             self.colormap_settings = read_csv(csv_file=self.surface_scaling_file)
             print("Colormaps settings loaded from file", self.surface_scaling_file)
 
-        # Read settings
-        self.settings_path = settings_file
         config_dir = os.path.dirname(os.path.abspath(self.selector_file))
         self.well_layer_dir = Path(os.path.join(config_dir, "well_layers"))
+
+        # Read settings
+        self.settings_path = settings_file
 
         if self.settings_path:
             self.settings = read_config(get_path(path=self.settings_path))
@@ -201,20 +209,24 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         # Load polygons
         self.polygon_data = polygon_data
+        polygon_configuration = self.shared_settings.get("polygon_layers")
         self.polygon_layers = None
         self.zone_polygon_layers = None
 
         if self.polygon_data is not None:
+            print("Reading polygons from:", self.polygon_data)
             self.polygon_files = [
                 get_path(Path(fn))
                 for fn in json.load(find_files(self.polygon_data, ".csv"))
             ]
-            print("Reading polygons from:", self.polygon_data)
+
             polygon_colors = self.settings.get("polygon_colors")
-            self.polygon_layers = load_polygons(self.polygon_files, polygon_colors)
+
+            self.polygon_layers = load_polygons(
+                self.polygon_data, polygon_configuration, polygon_colors
+            )
 
             # Load zone fault if existing
-
             self.zone_faults_folder = Path(os.path.join(self.polygon_data, "rms"))
             self.zone_faults_files = [
                 get_path(Path(fn))
@@ -252,7 +264,8 @@ class SurfaceViewer4D(WebvizPluginABC):
             self.all_wells_info["file_name"] = self.all_wells_info["file_name"].apply(
                 lambda x: get_path(Path(x))
             )
-            self.all_wells_df = load_all_wells(self.all_wells_info)
+            delta = 40  # Well trajectory resampling along MD)
+            self.all_wells_df = load_all_wells(self.all_wells_info, delta)
             self.drilled_wells_files = list(
                 self.wellbore_info[self.wellbore_info["layer_name"] == "Drilled wells"][
                     "file_name"
@@ -269,7 +282,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                 self.drilled_wells_info["wellbore.pdm_name"] != ""
             ]
 
-            self.pdm_wells_df = load_all_wells(self.pdm_wells_info)
+            self.pdm_wells_df = load_all_wells(self.pdm_wells_info, delta)
 
             layer_overview_file = get_path(
                 Path(self.well_layer_dir / "well_layers.yaml")
@@ -530,6 +543,50 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         return min_max
 
+    def create_zone_layer(self, iteration, realization, zone):
+        sep = ","
+        dtype = None
+        layer = None
+
+        default_color = "gray"
+
+        if self.settings and "polygon_colors" in self.settings.keys():
+            polygon_colors = self.settings["polygon_colors"]
+            color = polygon_colors["faults"]
+        else:
+            color = default_color
+
+        if self.polygon_mapping_file is not None:
+            polygon_mapping = read_csv(self.polygon_mapping_file)
+
+            if zone in polygon_mapping["surface_name"].to_list():
+                selected_zone = polygon_mapping[polygon_mapping["surface_name"] == zone]
+                polygon_file = selected_zone["polygon_file"].to_numpy()[0]
+
+                selected_polygon_file = os.path.join(
+                    self.fmu_directory,
+                    realization,
+                    iteration,
+                    "share/results/polygons",
+                    polygon_file,
+                )
+                selected_polygon_path = get_path(Path(selected_polygon_file))
+
+                if os.path.isfile(selected_polygon_path):
+                    # print("Reading polygon_file", selected_polygon_path)
+                    if "pol" in str(selected_polygon_path):
+                        sep = " "
+                        dtype = np.float64
+
+                    selected_polygon_df = read_csv(
+                        selected_polygon_path, sep=sep, dtype=dtype
+                    )
+
+                    dataframe = create_polygon_layer(selected_polygon_df)
+                    layer = make_new_polyline_layer(dataframe, zone, "Faults", color)
+
+        return layer
+
     def make_map(self, data, iteration, real, attribute_settings, map_idx):
         t0 = time.time()
         data = json.loads(data)
@@ -565,7 +622,12 @@ class SurfaceViewer4D(WebvizPluginABC):
                 layer = polygon_layer
 
                 if layer_name == "Faults":
-                    zone_layer = get_zone_layer(self.zone_polygon_layers, selected_zone)
+                    zone_layer = self.create_zone_layer(iteration, real, selected_zone)
+
+                    if zone_layer is None:
+                        zone_layer = get_zone_layer(
+                            self.zone_polygon_layers, selected_zone
+                        )
 
                     if zone_layer:
                         layer = zone_layer
@@ -580,7 +642,7 @@ class SurfaceViewer4D(WebvizPluginABC):
 
             # Load new interval layers if selected interval has changed (or has not been set)
             if interval != self.selected_intervals[map_idx]:
-                if get_dates(interval)[0] <= self.production_update:
+                if get_dates(interval)[0] <= self.last_observed_date:
                     index = self.interval_names.index(interval)
                     self.interval_well_layers = self.all_interval_layers[index]
                     self.selected_intervals[map_idx] = interval

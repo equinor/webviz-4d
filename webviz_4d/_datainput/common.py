@@ -171,3 +171,15 @@ def get_colormap(configuration, attribute):
             print("No default colormaps found for ", attribute)
 
     return colormap, minval, maxval
+
+
+def get_last_date(selection_list):
+    observed_intervals = selection_list["observed"]["interval"]
+
+    observed_dates = []
+    for interval in observed_intervals:
+        dates = get_dates(interval)
+        observed_dates.append(dates[0])
+        observed_dates.append(dates[1])
+
+    return max(observed_dates)

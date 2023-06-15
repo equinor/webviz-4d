@@ -1,4 +1,4 @@
-from typing import List, Tuple, Callable
+from typing import List, Tuple, Callable, Optional
 import json
 import os
 from io import BytesIO
@@ -30,8 +30,12 @@ def read_csvs(folder: Path, csv_files: list) -> pd.DataFrame:
 
 
 @webvizstore
-def read_csv(csv_file: Path) -> pd.DataFrame:
-    return pd.read_csv(csv_file, low_memory=False)
+def read_csv(
+    csv_file: Path,
+    sep: Optional[str] = ",",
+    dtype: Optional[str] = None,
+) -> pd.DataFrame:
+    return pd.read_csv(csv_file, sep=sep, dtype=dtype, low_memory=False)
 
 
 @webvizstore
