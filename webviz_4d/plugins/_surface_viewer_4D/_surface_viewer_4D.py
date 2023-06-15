@@ -167,6 +167,9 @@ class SurfaceViewer4D(WebvizPluginABC):
         # Read settings
         self.settings_path = settings_file
 
+        config_dir = os.path.dirname(os.path.abspath(self.selector_file))
+        self.well_layer_dir = Path(os.path.join(config_dir, "well_layers"))
+
         if self.settings_path:
             self.settings = read_config(get_path(path=self.settings_path))
             self.delimiter = None
@@ -220,6 +223,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                 for fn in json.load(find_files(self.polygon_data, ".csv"))
             ]
 
+            print("Reading polygons from:", self.polygon_data)
             polygon_colors = self.settings.get("polygon_colors")
 
             self.polygon_layers = load_polygons(self.polygon_files, polygon_colors)

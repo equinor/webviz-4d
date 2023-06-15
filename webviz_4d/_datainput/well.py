@@ -25,6 +25,7 @@ def load_all_wells(metadata, delta):
 
     for wellfile in wellfiles:
         well = load_well(wellfile)
+
         # Resample well trajectory to delta
         try:
             well.rescale(delta=delta)
