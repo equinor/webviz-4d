@@ -3,13 +3,10 @@ import os
 import pytest
 from pathlib import Path
 import xtgeo
-
-import webviz_4d._datainput.common as common
+import numpy as np
 
 from webviz_4d.plugins._surface_viewer_4D._webvizstore import (
     read_csv,
-    find_files,
-    get_path,
 )
 from webviz_4d._datainput.well import (
     load_well,
@@ -32,11 +29,11 @@ def test_load_well():
 
 
 def test_load_all_wells():
-    well_file = "55_33-A-1.w"
+    well_name = "55/33-A-4"
+    well_file = well_name.replace("/", "_") + ".w"
     well_file = Path(os.path.join(test_folder, data_folder, well_folder, well_file))
 
-    xtgeo_well_A1 = xtgeo.well_from_file(well_file, mdlogname="MD")
-    well_A1 = load_well(well_file)
+    well = load_well(well_file)
 
     wellbore_info = "wellbore_info.csv"
     wellbore_info = Path(
@@ -44,8 +41,22 @@ def test_load_all_wells():
     )
 
     all_wells_info = read_csv(csv_file=wellbore_info)
-    all_wells_df = load_all_wells(all_wells_info)
 
-    well_A1_df = all_wells_df[all_wells_df["WELLBORE_NAME"] == "55/33-A-1"]
+    # Test without resampling (delta = 0)
+    delta = 0
+    all_wells_df = load_all_wells(all_wells_info, delta)
 
-    assert well_A1.dataframe["X_UTME"].all() == well_A1_df["X_UTME"].all()
+    well_df = all_wells_df[all_wells_df["WELLBORE_NAME"] == well_name]
+    assert np.allclose(well.dataframe["X_UTME"].to_list(), well_df["X_UTME"].to_list())
+
+    # Test with resampling to 40 m MD
+    well_file = well_name.replace("/", "_") + "_resampled.w"
+    well_file = Path(os.path.join(test_folder, data_folder, well_folder, well_file))
+
+    well = load_well(well_file)
+
+    delta = 40
+    all_wells_df = load_all_wells(all_wells_info, delta)
+
+    well_df = all_wells_df[all_wells_df["WELLBORE_NAME"] == well_name]
+    assert np.allclose(well.dataframe["MD"].to_list(), well_df["MD"].to_list())
