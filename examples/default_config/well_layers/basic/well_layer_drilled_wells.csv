@@ -1,0 +1,10 @@
+,true_name,md_end,md_start,color,tooltip,layer_name
+0,55/33-1,,0,black,1: exploration (oil),well_layer_drilled_wells
+1,55/33-2,,0,black,2: wildcat (dry),well_layer_drilled_wells
+2,55/33-3,,0,black,3: wildcat (oil),well_layer_drilled_wells
+3,55/33-A-1,,0,black,A-1: production (oil),well_layer_drilled_wells
+4,55/33-A-2,,0,black,A-2: production (oil),well_layer_drilled_wells
+5,55/33-A-3,,0,black,A-3: production (oil),well_layer_drilled_wells
+6,55/33-A-4,,0,black,A-4: production (oil),well_layer_drilled_wells
+7,55/33-A-5,,0,black,A-5: injection (water),well_layer_drilled_wells
+8,55/33-A-6,,0,black,A-6: injection (water),well_layer_drilled_wells

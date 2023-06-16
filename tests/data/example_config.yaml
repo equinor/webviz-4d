@@ -1,15 +1,29 @@
 title: WebViz-4D Example 
 
 shared_settings:
+    field_names: [Drogon]
     fmu_directory: /scratch/example/fmu_case
+    
     simulated_maps: 
         realization_names: [realization-*]
         ensemble_names: [iter-0]
         map_directories: [share/results/maps]
+        
     observed_maps: 
         realization_names: [realization-0]
         ensemble_names: [iter-0]
-        map_directories: [share/observations/maps/]     
+        map_directories: [share/observations/maps/]  
+           
+    polygon_layers:
+        faults: Faults
+        owc_outline: Initial OWC 
+        prm_receivers: PRM receivers    
+        
+    well_data: &well_data ./well_data 
+    production_data: &production_data ./production_data   
+    polygon_data: &polygon_data ./polygon_data          
+    colormap_data: &colormap_data ../colormaps/ 
+    settings_file: &settings_file ./example_settings.yaml 
     
 pages:  
   - title: Front page

@@ -3,21 +3,20 @@ observed:
   - amplitude_mean
   - amplitude_rms
   - relai_mean
-  ensemble:
-  - iter-0
   interval:
   - 2018-07-01-2018-01-01
-  - 2019-07-01-2018-07-01
-  - 2020-07-01-2019-07-01
   - 2019-07-01-2018-01-01
   - 2020-07-01-2018-01-01
+  iteration:
+  - '---'
   name:
   - basevolantis
   - therys
   - topvolantis
   - valysar
+  - volon
   realization:
-  - realization-0
+  - '---'
 simulated:
   attribute:
   - amplitude_mean
@@ -29,17 +28,14 @@ simulated:
   - average_wt1f
   - average_wt2f
   - oilthickness
-  ensemble:
-  - iter-0
-  - iter-1
-  - iter-2
-  - iter-3
+  - relai_mean
   interval:
   - 2018-07-01-2018-01-01
-  - 2019-07-01-2018-07-01
-  - 2020-07-01-2019-07-01
   - 2019-07-01-2018-01-01
   - 2020-07-01-2018-01-01
+  iteration:
+  - iter-0
+  - iter-3
   name:
   - all
   - basevolantis
@@ -74,6 +70,7 @@ simulated:
   - realization-23
   - realization-24
   - realization-25
+  - realization-26
   - realization-27
   - realization-28
   - realization-29
@@ -147,7 +144,3 @@ simulated:
   - realization-97
   - realization-98
   - realization-99
-  - mean
-  - p10
-  - p90
-  - std

@@ -1,38 +1,32 @@
 import os
-import io
 import json
-import pytest
-import pandas as pd
 from pathlib import Path
 
 from webviz_4d.plugins._surface_viewer_4D._webvizstore import (
-    read_csv,
     find_files,
     get_path,
 )
 from webviz_4d._datainput.common import (
     read_config,
-    get_config_item,
 )
 
 from webviz_4d._datainput._polygons import (
     load_polygons,
     load_zone_polygons,
-    make_new_polyline_layer,
-    get_zone_layer,
 )
 
 config_file = "./tests/data/example_config.yaml"
 config = read_config(config_file)
 config_folder = os.path.dirname(config_file)
 
-settings_file = get_config_item(config, "settings")
-settings_file = os.path.join(config_folder, settings_file)
-settings_folder = os.path.dirname(settings_file)
-settings = read_config(settings_file)
+shared_settings = config.get("shared_settings")
+polygon_data = shared_settings.get("polygon_data")
+polygon_data = Path(os.path.join(config_folder, polygon_data))
 
-polygon_folder = settings["polygon_data"]
-polygon_folder = Path(os.path.join(settings_folder, polygon_folder))
+settings_file = shared_settings.get("settings_file")
+settings_file = Path(os.path.join(config_folder, settings_file))
+
+settings = read_config(get_path(settings_file))
 polygon_colors = settings.get("polygon_colors")
 
 fault_layer = {
@@ -63,10 +57,10 @@ zone_items = {"tooltip": "basevolantis", "color": "gray"}
 
 
 def test_load_polygons():
-    polygon_files = [
-        get_path(Path(fn)) for fn in json.load(find_files(polygon_folder, ".csv"))
-    ]
-    polygon_layers = load_polygons(polygon_files, polygon_colors)
+    polygon_configuration = shared_settings.get("polygon_layers")
+
+    polygon_colors = settings.get("polygon_colors")
+    polygon_layers = load_polygons(polygon_data, polygon_configuration, polygon_colors)
 
     # Fault layers
     layer = polygon_layers[0]
@@ -103,7 +97,7 @@ def test_load_polygons():
 
 
 def test_load_zone_polygons():
-    zone_polygon_folder = Path(os.path.join(polygon_folder, "rms"))
+    zone_polygon_folder = Path(os.path.join(polygon_data, "rms"))
     polygon_files = [
         get_path(Path(fn)) for fn in json.load(find_files(zone_polygon_folder, ".csv"))
     ]
