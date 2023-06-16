@@ -1,44 +1,62 @@
 # Configuration file: config.yaml
-title: Webviz-4D Drogon                              # Customize
+title: Webviz-4D Drogon                             
  
 shared_settings:
-    fmu_directory: ../fields/drogon/default_config/fmu_data  # Customize 
-    label: November 2021                        # Customize
-
-    simulated_maps: 
-        realization_names: [realization-*, statistics]      
-        ensemble_names: [iter-*, pred]                              # Customize        
-        map_directories: [share/results/maps]           # Customize
-        
+    field_names: [Drogon]
+    fmu_directory: <drogon>                          
+    label: Drogon                                   
+    
     observed_maps: 
         realization_names: [realization-0]                  
-        ensemble_names: [iter-1]                              # Customize    
-        map_directories: [share/observations/maps]          # Customize
+        iteration_names: [iter-0]                     
+        map_directories: [share/observations/maps]  
+        attributes: ['*']                           
+        surface_names: ['*']                        
+        time_intervals: ['*']                       
+
+    simulated_maps: 
+        realization_names: [realization-*]          
+        iteration_names: [iter-*]                           
+        map_directories: [share/results/maps]       
+        rms_polygons: [share/results/polygons]      
+        attributes: ['*']                       
+        surface_names: ['*']
+        time_intervals: ['*']  
+        
+    aggregated_maps:
+        map_directories: ["statistics"]
+        attributes: ['*'] 
+        surface_names: ['*']
+        time_intervals: ['*']           
          
     basic_well_layers: 
         drilled_wells: Drilled wells                        
         reservoir_section: Reservoir sections              
-        active_production:                # Customize
-        active_injection:                  # Customize
+        active_production:                
+        active_injection:                  
         
     additional_well_layers:      
         production: Producers                               
-        production_start:              # Customize
+        production_start:              
         production_completed:          
         injection: Injectors                                
-        injection_start:                # Customize                  
+        injection_start:                                  
         injection_completed:           
-        
-    wellfolder: &wellfolder ../well_data 
+         
+    well_data: &well_data ../well_data 
+    top_reservoir: 
+        directory: realization-0/iter-0/share/results/maps
+        file_name: topvolantis--ds_extract_geogrid.gri
     production_data: &production_data ../production_data 
-    polygons_folder: &polygons_folder ../polygon_data          
-    colormaps_folder: &colormaps_folder ../colormaps/     
+    polygon_data: &polygon_data ../polygon_data          
+    colormap_data: &colormap_data ../colormaps/     
     selector_file: &selector_file ./selectors.yaml                
     surface_metadata_file: &surface_metadata_file ./surface_metadata.csv
-    attribute_maps_file: &attribute_maps_file ./attribute_maps.csv
-    settings: &settings ./settings.yaml 
-    interval_mode: &interval_mode "reverse"       
-        
+    surface_scaling_file: &surface_scaling_file ./surface_scaling.csv
+    settings_file: &settings_file ../settings.yaml 
+    interval_mode: &interval_mode "normal"    
+    prod_data_intervals: all   
+         
 # ------------------------------
 options:
   menu:
@@ -50,37 +68,19 @@ options:
 
 # ------------------------------
 layout:
-  - section: Webviz-4D Menu (08.11.21) 
+  - section: Webviz-4D Default (2023.06)  
     content:
       # -----------------------------         
       - page: Front page 
         icon: home
         content:  
-          - BannerImage:
-              image: ../image.jpg                           
-              title: Drogon Webviz-4D                   # Customize
           - Markdown: 
               markdown_file: ../front_page.md  
               
       # ------------------------------
       - group: Information
         icon: info_circle
-        content:    
-          - page: Webviz-4D
-            content:   
-              - EmbedPdf:  
-                  pdf_file: ./webviz-4d.pdf 
-                                   
-          - page: Seismic data
-            content:   
-              - EmbedPdf:  
-                  pdf_file: ./seismic.pdf  
-                  
-          - page: Timelaps maps
-            content:   
-              - EmbedPdf:  
-                  pdf_file: ./maps.pdf                  # Customize                              
-                  
+        content:                                                       
           - page: How was this made
             content:
               - SyntaxHighlighter:
@@ -96,70 +96,72 @@ layout:
           - page: Observed and simulated maps
             content:
               - SurfaceViewer4D: 
-                  wellfolder: *wellfolder               
+                  well_data: *well_data               
                   production_data: *production_data
-                  polygons_folder: *polygons_folder       
-                  colormaps_folder: *colormaps_folder     
+                  polygon_data: *polygon_data       
+                  colormap_data: *colormap_data     
                   selector_file: *selector_file 
                   surface_metadata_file: *surface_metadata_file
-                  attribute_maps_file: *attribute_maps_file
-                  settings:  *settings 
+                  surface_scaling_file: *surface_scaling_file
+                  settings_file: *settings_file 
                   interval_mode: *interval_mode                   
                   
                   map1_defaults:
-                    attribute: amplitude_mean               # Customize 
-                    name: topvolantis                         # Customize
-                    map_type: observed                          # Customize
-                    ensemble: iter-0                              # Customize
-                    realization: realization-0                  # Customize      
+                    attribute: amplitude_mean                
+                    name: topvolantis                         
+                    map_type: observed                          
+                    iteration: ---                              
+                    realization: ---                    
+                    interval: 2020-07-01-2018-01-01  
                   map2_defaults: 
-                    attribute: amplitude_mean               # Customize
-                    name: topvolantis                          # Customize
-                    map_type: simulated                         # Customize
-                    ensemble: iter-0                              # Customize
-                    realization: realization-0                  # Customize
+                    attribute: amplitude_mean               
+                    name: topvolantis                          
+                    map_type: simulated                         
+                    iteration: iter-0                              
+                    realization: realization-0                  
+                    interval: 2020-07-01-2018-01-01
                   map3_defaults:
-                    attribute: oilthickness                   # Customize
-                    name: volon                          # Customize 
-                    map_type: simulated                         # Customize
-                    ensemble: iter-0                              # Customize
-                    realization: realization-0                  # Customize
-                     
-                  default_interval: 2020-07-01-2019-07-01       # Customize
+                    attribute: oilthickness                   
+                    name: volon                           
+                    map_type: simulated                         
+                    iteration: iter-0                              
+                    realization: realization-0                  
+                    interval: 2020-07-01-2018-01-01       
                                      
           - page: Observed maps
             content:
               - SurfaceViewer4D: 
-                  wellfolder: *wellfolder               
+                  well_data: *well_data               
                   production_data: *production_data
-                  polygons_folder: *polygons_folder       
-                  colormaps_folder: *colormaps_folder     
+                  polygon_data: *polygon_data       
+                  colormap_data: *colormap_data     
                   selector_file: *selector_file 
                   surface_metadata_file: *surface_metadata_file
-                  attribute_maps_file: *attribute_maps_file
-                  settings:  *settings 
+                  surface_scaling_file: *surface_scaling_file
+                  settings_file: *settings_file
                   interval_mode: *interval_mode                   
                   
                   map1_defaults: 
-                    attribute: amplitude_mean              # Customize  
-                    name: topvolantis                                 # Customize
-                    map_type: observed                          # Customize
-                    ensemble: iter-0                              # Customize
-                    realization: realization-0                  # Customize
+                    attribute: amplitude_mean                
+                    name: topvolantis                                 
+                    map_type: observed                          
+                    iteration: ---                              
+                    realization: ---                  
+                    interval: 2018-07-01-2018-01-01
                   map2_defaults: 
-                    attribute: amplitude_rms                         # Customize
-                    name: topvolantis                                 # Customize 
-                    map_type: observed                          # Customize
-                    ensemble: iter-0                              # Customize
-                    realization: realization-0                  # Customize     
+                    attribute: amplitude_mean                         
+                    name: topvolantis                                  
+                    map_type: observed                          
+                    iteration: ---                              
+                    realization: ---                     
+                    interval: 2019-07-01-2018-01-01  
                   map3_defaults:
-                    attribute: relai_mean                         # Customize 
-                    name: valysar                                 # Customize
-                    map_type: observed                          # Customize
-                    ensemble: iter-0                              # Customize
-                    realization: realization-0                  # Customize
-                    
-                  default_interval: 2020-10-02-2020-06-02       # Customize   
+                    attribute: amplitude_mean                          
+                    name: topvolantis                                 
+                    map_type: observed                           
+                    iteration: ---                                 
+                    realization: ---                  
+                    interval: 2020-07-01-2018-01-01     
  
 
       # -------------------------------
@@ -202,7 +204,7 @@ layout:
                       - 4D_interval
                       - Fluid  
                     filter_defaults: 
-                      Well: [A-1]                                   # Customize
+                      Well: [A-1]                                   
                     column_color_discrete_maps:
                       Fluid:
                          Produced_Oil_[kSm3]: '#00fa00'
@@ -226,7 +228,7 @@ layout:
                       - 4D_interval
                       - Fluid  
                     filter_defaults: 
-                      Well: [A-5]                                  # Customize
+                      Well: [A-5]                                  
                     column_color_discrete_maps:
                       Fluid:
                          Injected_Gas_[MSm3]: '#fa0000'

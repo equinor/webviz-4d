@@ -9,7 +9,7 @@ def load_well(well_path):
     return xtgeo.well_from_file(well_path, mdlogname="MD")
 
 
-def load_all_wells(metadata):
+def load_all_wells(metadata, delta):
     """For all wells in a folder return
     - a list of dataframes with the well trajectories
     - dataframe with metadata for all the wells"""
@@ -25,9 +25,14 @@ def load_all_wells(metadata):
 
     for wellfile in wellfiles:
         well = load_well(wellfile)
-        # Resample to 10 m MD and then downsample to 40 m
-        well.rescale(delta=10)
-        well.downsample()
+
+        # Resample well trajectory to delta
+        try:
+            well.rescale(delta=delta)
+        except:
+            print(
+                "WARNING:", well.name, ": rescaling failed, keeping original trajectory"
+            )
 
         well.dataframe = well.dataframe[["X_UTME", "Y_UTMN", "Z_TVDSS", "MD"]]
         well_metadata = metadata.loc[metadata["wellbore.rms_name"] == well.wellname]
