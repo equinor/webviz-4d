@@ -155,6 +155,7 @@ def load_polygons(polygon_data, configuration, polygon_colors):
 
                 label = configuration.get(name)
                 polygon_layer = make_new_polyline_layer(polygon_df, name, label, color)
+                polygon_layers.append(polygon_layer)
             except:
                 print("Polygon file not found:", csv_file)
 
