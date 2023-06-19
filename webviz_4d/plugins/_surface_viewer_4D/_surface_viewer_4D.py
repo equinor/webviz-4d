@@ -578,8 +578,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                 selected_polygon_path = get_path(Path(selected_polygon_file))
 
                 if os.path.isfile(selected_polygon_path):
-                    # print("Reading polygon_file", selected_polygon_path)
-                    if ".pol" in str(selected_polygon_path):
+                    if selected_polygon_path.suffix == ".pol":
                         sep = " "
                         dtype = np.float64
 
