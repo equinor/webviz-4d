@@ -42,10 +42,12 @@ def create_zone_layer(
             selected_polygon_path = get_path(Path(selected_polygon_file))
             print("DEBUG: selected_polygon_path", selected_polygon_path)
 
-            if os.path.isfile(selected_polygon_path):
-                if "pol" in str(selected_polygon_path):
-                    sep = " "
-                    dtype = np.float64
+            if (
+                selected_polygon_path.is_file()
+                and selected_polygon_path.suffix == ".pol"
+            ):
+                sep = " "
+                dtype = np.float64
 
                 selected_polygon_df = pd.read_csv(
                     selected_polygon_path, sep=sep, dtype=dtype
