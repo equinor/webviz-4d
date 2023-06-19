@@ -171,6 +171,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.well_layer_dir = Path(os.path.join(config_dir, "well_layers"))
 
         if self.settings_path:
+            print("Reading settings from", self.settings_path)
             self.settings = read_config(get_path(path=self.settings_path))
             self.delimiter = None
             self.attribute_settings = self.settings.get("attribute_settings")
@@ -225,8 +226,6 @@ class SurfaceViewer4D(WebvizPluginABC):
 
             print("Reading polygons from:", self.polygon_data)
             polygon_colors = self.settings.get("polygon_colors")
-
-            self.polygon_layers = load_polygons(self.polygon_files, polygon_colors)
 
             self.polygon_layers = load_polygons(
                 self.polygon_data, polygon_configuration, polygon_colors
@@ -580,7 +579,7 @@ class SurfaceViewer4D(WebvizPluginABC):
 
                 if os.path.isfile(selected_polygon_path):
                     # print("Reading polygon_file", selected_polygon_path)
-                    if "pol" in str(selected_polygon_path):
+                    if ".pol" in str(selected_polygon_path):
                         sep = " "
                         dtype = np.float64
 

@@ -43,7 +43,7 @@ def create_zone_layer(
             print("DEBUG: selected_polygon_path", selected_polygon_path)
 
             if os.path.isfile(selected_polygon_path):
-                if "pol" in str(selected_polygon_path):
+                if ".pol" in str(selected_polygon_path):
                     sep = " "
                     dtype = np.float64
 
