@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 import os
 import numpy as np
+import pandas as pd
 import time
 
 from webviz_config import WebvizPluginABC
@@ -25,7 +26,6 @@ from webviz_4d._datainput._production import (
 from webviz_4d._private_plugins.surface_selector import SurfaceSelector
 from webviz_4d._datainput._colormaps import load_custom_colormaps
 from webviz_4d._datainput._polygons import (
-    load_polygons,
     load_zone_polygons,
     get_zone_layer,
     create_polygon_layer,
@@ -224,11 +224,10 @@ class SurfaceViewer4D(WebvizPluginABC):
                 for fn in json.load(find_files(self.polygon_data, ".csv"))
             ]
 
-            print("Reading polygons from:", self.polygon_data)
             polygon_colors = self.settings.get("polygon_colors")
 
-            self.polygon_layers = load_polygons(
-                self.polygon_data, polygon_configuration, polygon_colors
+            self.polygon_layers = self.load_polygons(
+                polygon_data, polygon_configuration, polygon_colors
             )
 
             # Load zone fault if existing
@@ -365,9 +364,6 @@ class SurfaceViewer4D(WebvizPluginABC):
             store_functions.append(
                 (find_files, [{"folder": self.polygon_data, "suffix": ".csv"}])
             )
-            store_functions.append(
-                (get_path, [{"path": fn} for fn in self.polygon_files])
-            )
 
             store_functions.append(
                 (find_files, [{"folder": self.zone_faults_folder, "suffix": ".csv"}])
@@ -375,6 +371,9 @@ class SurfaceViewer4D(WebvizPluginABC):
             store_functions.append(
                 (get_path, [{"path": fn} for fn in self.zone_faults_files])
             )
+
+        if self.polygon_mapping_file is not None:
+            store_functions.append((get_path, [{"path": self.polygon_mapping_file}]))
 
         if self.selector_file is not None:
             store_functions.append((get_path, [{"path": self.selector_file}]))
@@ -427,6 +426,34 @@ class SurfaceViewer4D(WebvizPluginABC):
     @property
     def layout(self):
         return set_layout(parent=self)
+
+    def load_polygons(self, polygon_data, configuration, polygon_colors):
+        polygon_layers = []
+        default_color = "black"
+
+        if configuration is not None:
+            for key, value in configuration.items():
+                selected_file = key + ".csv"
+                csv_file = get_path(Path(polygon_data / selected_file))
+
+                if os.path.isfile(csv_file):
+                    polygon_df = read_csv(csv_file)
+                    name = polygon_df["name"].unique()[0]
+
+                    if polygon_colors and key in polygon_colors.keys():
+                        color = polygon_colors[key]
+                    else:
+                        color = default_color
+
+                    label = configuration.get(name)
+                    polygon_layer = make_new_polyline_layer(
+                        polygon_df, name, label, color
+                    )
+                    polygon_layers.append(polygon_layer)
+                else:
+                    print("Polygon file not found:", csv_file)
+
+        return polygon_layers
 
     def get_real_runpath(self, data, iteration, real, map_type):
         selected_interval = data["date"]
