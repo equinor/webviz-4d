@@ -195,16 +195,6 @@ def get_zone_layer(polygon_layers, zone_name):
     return None
 
 
-def create_zone_layer(polygon_file_name, name):
-    layer = None
-
-    if os.path.exists(polygon_file_name):
-        polygon_df = pd.read_csv(polygon_file_name)
-        layer = create_fault_layer(polygon_df, name)
-
-    return layer
-
-
 def create_fault_layer(faults_df, name):
     layer_df = pd.DataFrame()
     seg_id = []
