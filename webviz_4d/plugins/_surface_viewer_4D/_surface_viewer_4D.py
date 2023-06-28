@@ -366,6 +366,10 @@ class SurfaceViewer4D(WebvizPluginABC):
             )
 
             store_functions.append(
+                (get_path, [{"path": fn} for fn in self.polygon_files])
+            )
+
+            store_functions.append(
                 (find_files, [{"folder": self.zone_faults_folder, "suffix": ".csv"}])
             )
             store_functions.append(
@@ -437,7 +441,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                 csv_file = get_path(Path(polygon_data / selected_file))
 
                 if os.path.isfile(csv_file):
-                    polygon_df = read_csv(csv_file)
+                    polygon_df = pd.read_csv(csv_file)
                     name = polygon_df["name"].unique()[0]
 
                     if polygon_colors and key in polygon_colors.keys():
