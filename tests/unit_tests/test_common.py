@@ -19,8 +19,8 @@ def test_read_config():
     assert well_folder == "./well_data"
 
 
-def test_get_well_colors():
-    colors = common.get_well_colors(settings)
+def test_well_colors():
+    colors = common.get_object_colors(settings, "well_colors")
 
     default = colors["default"]
     oil = colors["oil_production"]

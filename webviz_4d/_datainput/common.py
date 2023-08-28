@@ -146,10 +146,40 @@ def get_plot_label(configuration, interval):
     return label
 
 
-def get_well_colors(settings):
-    """Return well colors from a configuration"""
+def get_object_colors(settings, object_type):
+    """Return object colors from settings if existing"""
 
-    return settings["well_colors"]
+    well_colors = {
+        "default": "black",
+        "oil_production": "green",
+        "gas_production": "salmon",
+        "gas_injection": "red",
+        "water_injection": "cyan",
+        "wag_injection": "gold",
+        "planned": "purple",
+    }
+
+    polygon_colors = {
+        "default": "gray",
+        "owc_outline": "lightslategray",
+        "goc_outline": "red",
+        "faults": "gray",
+        "prm_receivers": "darkgray",
+        "4D_undershoot": "salmon",
+        "injectites": "khaki",
+    }
+
+    object_colors = {"polygon_colors": polygon_colors, "well_colors": well_colors}
+
+    if object_type in object_colors.keys():
+        if settings is not None:
+            colors = settings[object_type]
+        else:
+            colors = object_colors[object_type]
+    else:
+        colors = None
+
+    return colors
 
 
 def get_colormap(configuration, attribute):

@@ -10,7 +10,7 @@ from webviz_config import WebvizPluginABC
 from webviz_4d._datainput._surface import make_surface_layer, load_surface
 from webviz_4d._datainput.common import (
     read_config,
-    get_well_colors,
+    get_object_colors,
     get_update_dates,
     get_plot_label,
     get_dates,
@@ -19,7 +19,6 @@ from webviz_4d._datainput.common import (
 
 from webviz_4d._datainput.well import load_all_wells
 from webviz_4d._datainput._production import (
-    get_well_layer_filename,
     make_new_well_layer,
 )
 
@@ -176,6 +175,10 @@ class SurfaceViewer4D(WebvizPluginABC):
             self.delimiter = None
             self.attribute_settings = self.settings.get("attribute_settings")
             self.default_colormap = self.settings.get("default_colormap", "seismic_r")
+        else:
+            self.settings = None
+            self.default_colormap = "seismic_r"
+            print("WARNING: no settings file found, using default values")
 
         self.map_defaults = []
         self.maps_metadata_list = []
@@ -209,7 +212,6 @@ class SurfaceViewer4D(WebvizPluginABC):
             map2_defaults["interval"],
             map3_defaults["interval"],
         ]
-        self.colors = get_well_colors(self.settings)
 
         # Load polygons
         self.polygon_data = polygon_data
@@ -224,7 +226,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                 for fn in json.load(find_files(self.polygon_data, ".csv"))
             ]
 
-            polygon_colors = self.settings.get("polygon_colors")
+            polygon_colors = get_object_colors(self.settings, "polygon_colors")
 
             self.polygon_layers = self.load_polygons(
                 polygon_data, polygon_configuration, polygon_colors
@@ -623,17 +625,24 @@ class SurfaceViewer4D(WebvizPluginABC):
         return layer
 
     def make_map(self, data, iteration, real, attribute_settings, map_idx):
-        t0 = time.time()
         data = json.loads(data)
-
         selected_zone = data.get("name")
-        attribute_settings = json.loads(attribute_settings)
         map_type = self.map_defaults[map_idx]["map_type"]
-
         surface_file = self.get_real_runpath(data, iteration, real, map_type)
 
         if os.path.isfile(surface_file):
             surface = load_surface(surface_file)
+
+            attribute_settings = json.loads(attribute_settings)
+
+            if attribute_settings:
+                min_val = attribute_settings.get(data["attr"], {}).get("min", None)
+                max_val = attribute_settings.get(data["attr"], {}).get("max", None)
+            else:
+                x, y, z = surface.get_xyz_values1d(activeonly=True)
+                max_val = np.percentile(z, 100)
+                min_val = -max_val
+
             metadata = self.get_map_scaling(data, map_type, real)
 
             surface_layers = [
@@ -643,8 +652,8 @@ class SurfaceViewer4D(WebvizPluginABC):
                     color=attribute_settings.get(data["attr"], {}).get(
                         "color", self.default_colormap
                     ),
-                    min_val=attribute_settings.get(data["attr"], {}).get("min", None),
-                    max_val=attribute_settings.get(data["attr"], {}).get("max", None),
+                    min_val=min_val,
+                    max_val=max_val,
                     unit=attribute_settings.get(data["attr"], {}).get("unit", ""),
                     hillshading=False,
                     min_max_df=metadata,
