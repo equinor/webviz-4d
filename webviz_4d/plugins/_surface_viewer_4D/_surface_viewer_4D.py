@@ -207,11 +207,7 @@ class SurfaceViewer4D(WebvizPluginABC):
             self.map_defaults.append(map2_defaults)
             self.map_defaults.append(map3_defaults)
 
-        self.selected_intervals = [
-            map1_defaults["interval"],
-            map2_defaults["interval"],
-            map3_defaults["interval"],
-        ]
+        self.selected_intervals = [None, None, None]
 
         # Load polygons
         self.polygon_data = polygon_data
