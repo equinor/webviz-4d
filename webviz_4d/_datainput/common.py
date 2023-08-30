@@ -172,7 +172,7 @@ def get_object_colors(settings, object_type):
     object_colors = {"polygon_colors": polygon_colors, "well_colors": well_colors}
 
     if object_type in object_colors.keys():
-        if settings is not None:
+        if settings is not None and object_type in settings.keys():
             colors = settings[object_type]
         else:
             colors = object_colors[object_type]
