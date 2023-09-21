@@ -1,43 +1,45 @@
-attribute_settings:  
-    default_colormap: seismic_r   
+wellfolder:
+    ./well_data               
+production_data:
+    ./production_data 
+polygon_data:
+    ./polygon_data   
+      
+colormaps_folder: ./colormaps/    
     
-    amplitude_mean:
-        color:   seismic_r
-        min:  -0.03
-        max:   0.03
-    amplitude_rms:
-        color:   inferno
-        min:  0
-        max:  0.03
-    relai_mean:
-        color:   seismic_r
-        min:  -0.03
-        max:   0.03
-    average_pressure:
-        color:   seismic_r  
-        min:   -5
-        max:    5     
-    oilthickness:
-        color:   seismic_r
-        min:    -5
-        max:     5
-    average_sgas:
-        color:   seismic_r 
-        min: -0.5
-        max:  0.5   
-    average_soil:
-        color:   seismic_r 
-        min: -0.5
-        max:  0.5  
-    average_swat:
-        color:   seismic_r 
-        min: -0.5
-        max:  0.5   
-    oilthickness:
-        color:   seismic_r 
-        min: -1
-        max:  1        
-        
+fmu_directory: <case> 
+
+simulated_maps: 
+    realization_names: [realization-0]
+    ensemble_names: [iter-0]
+    map_directories: [share/results/maps]
+observed_maps: 
+    realization_names: [realization-0]
+    ensemble_names: [iter-0]
+    map_directories: [share/observed/maps]
+    
+depth_maps:
+    top_reservoir: <top_res_depth>.gri  
+
+map_settings:
+    colormaps_folder: ./colormaps/
+    surface_metadata_file: ./surface_metadata.csv
+    colormaps_settings: ./attribute_maps.csv
+    default_colormap: inferno_r
+    attribute_settings:     
+        4d_depth_rms:
+            color:   geoprobe_filtered_r
+            min:    -0.01
+            max:    0.01
+        oilthickness:
+            color:   geoprobe_filtered_r
+            min:    -4
+            max:     4
+        average_swat:
+            color:   geoprobe_filtered_r
+            min:    -0.6
+            max:     0.6   
+            
 well_colors:
     default: black
     oil_open: lime
@@ -47,11 +49,12 @@ well_colors:
     gas_injection:  magenta
     water_injection: blue
     wag_injection: pink   
-    planned: purple   
-    
-polygon_colors:
-    faults: black   
-    
-prod_data_intervals: 
+    planned: purple     
+        
+date_labels:
+    20191001: PRM0
+    20201001: PRM1
+
+
     
  
