@@ -1,0 +1,168 @@
+title: WebViz-4D Example 
+
+shared_settings:
+    field_names: [Drogon]
+    fmu_directory: /scratch/example/fmu_case
+    
+    simulated_maps: 
+        realization_names: [realization-*]
+        ensemble_names: [iter-0]
+        map_directories: [share/results/maps] 
+           
+    polygon_layers:
+        faults: Faults
+        owc_outline: Initial OWC 
+        prm_receivers: PRM receivers    
+        
+    well_data: &well_data ./well_data 
+    production_data: &production_data ./production_data   
+    polygon_data: &polygon_data ./polygon_data          
+    colormap_data: &colormap_data ../colormaps/ 
+    settings_file: &settings_file ./example_settings.yaml 
+    
+pages:  
+  - title: Front page
+    content:  
+      - BannerImage:
+          image: ./example_image.jpg
+          title: Webviz-4D Example
+      - Markdown:
+          markdown_file: ./front_page.md
+          
+  - title: Documentation
+    content:  
+      - EmbedPdf:
+          pdf_file: ./example_doc.pdf        
+          
+  - title: Observed and simulated maps
+    content:
+      - SurfaceViewer4D:
+          wellfolder: 
+              ./well_data            
+          polygon_data:
+              ./polygon_data        
+          colormaps_folder: ./colormaps/     
+          
+          map1_defaults:
+            attribute: 4d_diff_rms
+            name: all
+            map_type: simulated
+            ensemble: iter-0
+            realization: realization-0
+          map2_defaults: 
+            attribute: 4d_diff_rms
+            name: all
+            map_type: simulated
+            ensemble: iter-0
+            realization: realization-0  
+          map3_defaults:
+            attribute: average_swat
+            name: all
+            map_type: simulated
+            ensemble: iter-0
+            realization: realization-0  
+            
+          default_interval: 2020-10-01-2019-10-01    
+          
+          surface_metadata_file: ./surface_metadata.csv
+          attribute_maps_file: ./attribute_maps.csv
+          settings:  ./example_settings.yaml
+                   
+  - title: Wellbore overview 
+    content:
+      - DataTable:
+          csv_file: ./well_data/wellbore_overview.csv
+          sorting: True
+          filtering: True   
+                             
+  - title: Production plots  
+    content:
+        - TablePlotter:
+            csv_file: ./production_data/production_fluid_table.csv
+            plot_options:
+              x: 4D_interval
+              y: Volumes
+              type: bar   
+              color: Fluid
+              barmode: group
+            filter_cols:
+              - Well  
+              - 4D_interval
+              - Fluid  
+            filter_defaults: 
+              Well: [Well-1]  
+            column_color_discrete_maps:
+              Fluid:
+                 Oil_[kSm3]: '#00ff00'
+                 Gas_[MSm3]: '#ff0000'
+                 Water_[kSm3]: '#0000ff'  
+    
+  - title: Injection plots  
+    content:
+        - TablePlotter:
+            csv_file: ./production_data/injection_fluid_table.csv
+            plot_options:
+              x: 4D_interval
+              y: Volumes
+              type: bar   
+              color: Fluid
+              barmode: group
+            filter_cols:
+              - Well  
+              - 4D_interval
+              - Fluid  
+            filter_defaults: 
+              Well: [Well-2]  
+            column_color_discrete_maps:
+              Fluid:
+                 Injected_Gas_[MSm3]: '#fa0000'
+                 Injected_Water_[kSm3]: '#0000fa'                         
+          
+  - title: Oil production volumes [kSm3] 
+    content:
+      - DataTable:
+          csv_file: ./production_data/BORE_OIL_VOL.csv  
+          sorting: True
+          filtering: True   
+          
+  - title: Gas production volumes [MSm3]
+    content:
+      - DataTable:
+          csv_file: ./production_data/BORE_GAS_VOL.csv  
+          sorting: True
+          filtering: True       
+          
+  - title: Water production volumes [kSm3] 
+    content:
+      - DataTable:
+          csv_file: ./production_data/BORE_WAT_VOL.csv  
+          sorting: True
+          filtering: True             
+          
+  - title: Gas injection volumes [MSm3]
+    content:
+      - DataTable:
+          csv_file: ./production_data/BORE_GI_VOL.csv  
+          sorting: True
+          filtering: True     
+          
+  - title: Water injection volumes [kSm3]  
+    content:
+      - DataTable:
+          csv_file: ./production_data/BORE_WI_VOL.csv  
+          sorting: True
+          filtering: True                     
+
+  - title: Configuration
+    content:  
+      - Markdown:
+          markdown_file: ./configuration.md
+      - SyntaxHighlighter:
+          filename: ./config.yaml
+          dark_theme: yes   
+      - SyntaxHighlighter:
+          filename: ./settings.yaml
+          dark_theme: yes 
+  
+           
+
