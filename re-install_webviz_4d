@@ -13,7 +13,7 @@ echo "Installing all necessary packages ..."
 pip install --upgrade pip
 pip install urllib3==1.26.15
 pip install -r requirements.txt
-pip install git+ssh://git@github.com/equinor/webviz-config
+pip install webviz-config
 pip install webviz-config-equinor
 pip install black
 pip install pylint

@@ -1,7 +1,7 @@
 """ Collection of some functions used by the 4D viewer or data preparation scripts """
 
-import os
 import io
+import numpy as np
 from pathlib import Path
 import json
 import yaml
@@ -182,27 +182,6 @@ def get_object_colors(settings, object_type):
     return colors
 
 
-def get_colormap(configuration, attribute):
-    colormap = None
-    minval = None
-    maxval = None
-
-    try:
-        attribute_dict = configuration[attribute]
-        # print("attribute_dict", attribute_dict)
-        colormap = attribute_dict["colormap"]
-        minval = attribute_dict["min_value"]
-        minval = attribute_dict["max_value"]
-    except:
-        try:
-            map_settings = configuration("map_settings")
-            colormap = map_settings("default_colormap")
-        except:
-            print("No default colormaps found for ", attribute)
-
-    return colormap, minval, maxval
-
-
 def get_last_date(selection_list):
     observed_intervals = selection_list["observed"]["interval"]
 
@@ -213,3 +192,15 @@ def get_last_date(selection_list):
         observed_dates.append(dates[1])
 
     return max(observed_dates)
+
+
+def get_map_min_max(surface, attribute_settings, data):
+    if attribute_settings:
+        min_val = attribute_settings.get(data["attr"], {}).get("min", None)
+        max_val = attribute_settings.get(data["attr"], {}).get("max", None)
+    else:
+        x, y, z = surface.get_xyz_values1d(activeonly=True)
+        max_val = np.percentile(z, 100)
+        min_val = -max_val
+
+    return min_val, max_val

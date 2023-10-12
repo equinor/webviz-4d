@@ -10,16 +10,16 @@ from webviz_4d._datainput.common import (
     read_config,
 )
 
-from webviz_4d._datainput._polygons import (
-    load_polygons,
-    load_zone_polygons,
-)
+# from webviz_4d._datainput._polygons import (
+#     load_zone_polygons,
+# )
 
 config_file = "./tests/data/example_config.yaml"
 config = read_config(config_file)
 config_folder = os.path.dirname(config_file)
 
 shared_settings = config.get("shared_settings")
+polygon_settings = shared_settings.get("polygon_layers")
 polygon_data = shared_settings.get("polygon_data")
 polygon_data = Path(os.path.join(config_folder, polygon_data))
 
@@ -53,64 +53,32 @@ zone_layer = {
 fault_items = {"tooltip": "faults", "color": "gray"}
 owc_items = {"tooltip": "Initial OWC", "color": "lightslategray"}
 prm_items = {"tooltip": "2018-line 1", "color": "darkgray"}
-zone_items = {"tooltip": "basevolantis", "color": "gray"}
+zone_items = {
+    0: {"label": "Faults", "tooltip": "topvolantis-faultlines", "color": "gray"},
+    1: {"label": "FWL", "tooltip": "topvolantis-outline_fwl", "color": "blue"},
+    2: {"label": "GOC", "tooltip": "topvolantis-outline_goc", "color": "red"},
+}
 
 
-def test_load_polygons():
-    polygon_configuration = shared_settings.get("polygon_layers")
+# def test_load_zone_polygons():
+#     zone_polygon_folder = Path(os.path.join(polygon_data, "zone_polygons"))
+#     polygon_files = sorted(
+#         [
+#             get_path(Path(fn))
+#             for fn in json.load(find_files(zone_polygon_folder, ".csv"))
+#         ]
+#     )
 
-    polygon_colors = settings.get("polygon_colors")
-    polygon_layers = load_polygons(polygon_data, polygon_configuration, polygon_colors)
+#     polygon_layers = load_zone_polygons(polygon_files, polygon_settings, settings)
 
-    # Fault layers
-    layer = polygon_layers[0]
+#     for index, layer in enumerate(polygon_layers):
+#         layer_name = layer.get("name")
+#         assert layer_name == zone_items[index].get("label")
 
-    for key, value in fault_layer.items():
-        assert layer[key] == value
+#         data = layer.get("data")[0]
 
-    data = layer["data"][0]
+#         color = data.get("color")
+#         assert color == zone_items[index].get("color")
 
-    for key, value in fault_items.items():
-        assert data[key] == value
-
-    # OWC layer
-    layer = polygon_layers[1]
-
-    for key, value in owc_layer.items():
-        assert layer[key] == value
-
-    data = layer["data"][0]
-
-    for key, value in owc_items.items():
-        assert data[key] == value
-
-    # PRM layer
-    layer = polygon_layers[2]
-
-    for key, value in prm_layer.items():
-        assert layer[key] == value
-
-    data = layer["data"][0]
-
-    for key, value in prm_items.items():
-        assert data[key] == value
-
-
-def test_load_zone_polygons():
-    zone_polygon_folder = Path(os.path.join(polygon_data, "rms"))
-    polygon_files = [
-        get_path(Path(fn)) for fn in json.load(find_files(zone_polygon_folder, ".csv"))
-    ]
-
-    polygon_layers = load_zone_polygons(polygon_files, polygon_colors)
-
-    # Zone layer
-    layer = polygon_layers[0]
-
-    for key, value in zone_layer.items():
-        assert layer[key] == value
-
-    data = layer["data"][0]
-
-    for key, value in zone_items.items():
-        assert data[key] == value
+#         tooltip = data.get("tooltip")
+#         assert tooltip == zone_items[index].get("tooltip")

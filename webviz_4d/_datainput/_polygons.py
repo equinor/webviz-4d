@@ -1,17 +1,9 @@
-import os
 import pandas as pd
 import json
-from pathlib import Path
-
-from webviz_config.webviz_store import webvizstore
-from webviz_config.common_cache import CACHE
-
-from webviz_4d.plugins._surface_viewer_4D._webvizstore import (
-    read_csv,
-)
 
 
 default_colors = {
+    "field_outline": "lightslategray",
     "owc_outline": "lightslategray",
     "goc_outline": "red",
     "faults": "gray",
@@ -20,14 +12,7 @@ default_colors = {
     "injectites": "khaki",
 }
 
-checked = {
-    "Initial OWC": True,
-    "Initial GOC": True,
-    "Faults": True,
-}
-
-# key_list = list(supported_polygons.keys())
-# val_list = list(supported_polygons.values())
+checked = {"OWC": True, "GOC": True, "FWL": True, "Faults": True, "Field outline": True}
 
 
 def get_position_data(polyline):
@@ -42,12 +27,24 @@ def get_position_data(polyline):
     return positions
 
 
-def get_fault_polyline(fault, tooltip, color):
-    """Create polyline data - fault polylines, color and tooltip"""
-    if color is None:
-        color = default_colors.get("faults")
+def create_polyline(polygon_row, polygon_info):
+    """Create polyline data - polylines, color and tooltip"""
 
-    positions = get_position_data(fault)
+    zone = polygon_info.get("zone")
+    year = polygon_row.get("year")
+    line = polygon_row.get("line")
+    zone = polygon_info.get("zone")
+
+    if zone is not None:
+        tooltip = zone + "-" + polygon_info.get("tagname")
+    elif year is not None:
+        tooltip = str(year) + "-line " + str(line)
+    else:
+        tooltip = polygon_info.get("tagname")
+
+    color = polygon_info.get("color")
+
+    positions = get_position_data(polygon_row)
 
     if positions:
         return {
@@ -58,15 +55,14 @@ def get_fault_polyline(fault, tooltip, color):
         }
 
 
-def get_prm_polyline(prm, color):
+def create_prm_polyline(polygon_row, polygon_info):
     """Create polyline data - prm receiver polylines, color and tooltip"""
-    if color is None:
-        color = default_colors.get("prm_receivers")
-
-    positions = get_position_data(prm)
-    year = prm["year"]
-    line = prm["line"]
+    year = polygon_row["year"]
+    line = polygon_row["line"]
     tooltip = str(year) + "-line " + str(line)
+    color = polygon_info.get("color")
+
+    positions = get_position_data(polygon_row)
 
     if positions:
         return {
@@ -104,24 +100,18 @@ def get_contact_polyline(contact, key, label, color):
     return data
 
 
-def make_new_polyline_layer(dataframe, key, label, color):
+def make_polyline_layer(dataframe, polygon_info):
     """Make layeredmap fault layer"""
     data = []
+    layer = {}
 
-    if "outline" in key:
-        data = get_contact_polyline(dataframe, key, label, color)
-    elif key == "prm_receivers":
-        for _index, row in dataframe.iterrows():
-            polyline_data = get_prm_polyline(row, color)
+    for _index, row in dataframe.iterrows():
+        polyline_data = create_polyline(row, polygon_info)
 
-            if polyline_data:
-                data.append(polyline_data)
-    else:
-        for _index, row in dataframe.iterrows():
-            polyline_data = get_fault_polyline(row, key, color)
+        if polyline_data:
+            data.append(polyline_data)
+            label = polygon_info.get("label")
 
-            if polyline_data:
-                data.append(polyline_data)
     if data:
         checked_state = checked.get(label, False)
         layer = {
@@ -134,65 +124,28 @@ def make_new_polyline_layer(dataframe, key, label, color):
     return layer
 
 
-def load_polygons(polygon_data, configuration, polygon_colors):
-    polygon_layers = []
+def make_prm_polyline_layer(dataframe, polygon_info):
+    """Make layeredmap fault layer"""
+    data = []
+    layer = {}
 
-    if configuration is not None:
-        for key, value in configuration.items():
-            selected_file = key + ".csv"
-            csv_file = Path(polygon_data) / selected_file
+    for _index, row in dataframe.iterrows():
+        polyline_data = create_prm_polyline(row, polygon_info)
 
-            try:
-                polygon_df = read_csv(csv_file)
-                name = polygon_df["name"].unique()[0]
+        if polyline_data:
+            data.append(polyline_data)
+            label = polygon_info.get("label")
 
-                default_color = default_colors.get(name)
+    if data:
+        checked_state = checked.get(label, False)
+        layer = {
+            "name": label,
+            "checked": checked_state,
+            "base_layer": False,
+            "data": data,
+        }
 
-                if polygon_colors and key in polygon_colors.keys():
-                    color = polygon_colors[key]
-                else:
-                    color = default_color
-
-                label = configuration.get(name)
-                polygon_layer = make_new_polyline_layer(polygon_df, name, label, color)
-                polygon_layers.append(polygon_layer)
-            except:
-                print("Polygon file not found:", csv_file)
-
-    return polygon_layers
-
-
-def load_zone_polygons(csv_files, polygon_colors):
-    polygon_layers = []
-
-    for csv_file in csv_files:
-        polygon_df = read_csv(csv_file)
-
-        name = os.path.basename(csv_file).replace(".csv", "")
-        label = "Faults"
-
-        default_color = default_colors.get(name)
-
-        if polygon_colors:
-            color = polygon_colors.get("faults")
-        else:
-            color = default_color
-
-        polygon_layer = make_new_polyline_layer(polygon_df, name, label, color)
-        polygon_layers.append(polygon_layer)
-
-    return polygon_layers
-
-
-def get_zone_layer(polygon_layers, zone_name):
-    for layer in polygon_layers:
-        data = layer["data"]
-        tooltip = data[0]["tooltip"]
-
-        if tooltip == zone_name:
-            return layer
-
-    return None
+    return layer
 
 
 def create_fault_layer(faults_df, name):
@@ -280,3 +233,59 @@ def create_polygon_layer(polygon_df):
     layer_df["coordinates"] = all_positions
 
     return layer_df
+
+
+def get_polygon_info(layer_file, polygones_overview, settings):
+    default_color = "black"
+
+    info = polygones_overview[polygones_overview["file_name"] == layer_file]
+
+    polygon_name = info["name"].values[0]
+    polygon_type = info["type"].values[0]
+    polygon_tagname = info["tagname"].values[0]
+    polygon_label = info["label"].values[0]
+
+    polygon_colors = settings.get("polygon_colors")
+
+    if polygon_colors:
+        color = polygon_colors.get(polygon_type, default_color)
+    else:
+        color = default_color
+
+    keys = ["type", "zone", "tagname", "label", "color"]
+    values = [polygon_type, polygon_name, polygon_tagname, polygon_label, color]
+
+    polygon_info = {keys[i]: values[i] for i in range(len(keys))}
+
+    return polygon_info
+
+
+def get_polygon_name(mapping, zone, polygon_type):
+    polygon_name = None
+
+    selected_row = mapping[
+        (mapping["surface_name"] == zone) & (mapping["polygon_type"] == polygon_type)
+    ]
+
+    selected_name = selected_row["polygon_name"]
+
+    if len(selected_name) == 1:
+        polygon_name = selected_name.values[0]
+
+    return polygon_name
+
+
+def get_polygon_layer(polygon_layers, selected_name, selected_tagname):
+    layer = None
+
+    for polygon_layer in polygon_layers:
+        polygon_data = polygon_layer.get("data")[0]
+        tooltip = polygon_data.get("tooltip")
+        tooltip_items = tooltip.split("-")
+        name = tooltip_items[0]
+        tagname = tooltip_items[1]
+
+        if name == selected_name and tagname == selected_tagname:
+            layer = polygon_layer
+
+    return layer
