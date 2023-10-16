@@ -120,7 +120,13 @@ class SurfaceViewer4D(WebvizPluginABC):
         )
         self.selector_file = selector_file
         self.selection_list = read_config(get_path(path=self.selector_file))
-        self.last_observed_date = get_last_date(self.selection_list)
+
+        last_observed_date = get_last_date(self.selection_list)
+
+        if last_observed_date is None:
+            last_observed_date = "9999-12-31"
+
+        self.last_observed_date = last_observed_date
 
         # Read custom colormaps
         print("Reading custom colormaps from:", colormap_data)

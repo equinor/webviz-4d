@@ -183,15 +183,22 @@ def get_object_colors(settings, object_type):
 
 
 def get_last_date(selection_list):
-    observed_intervals = selection_list["observed"]["interval"]
+    observed_items = selection_list.get("observed")
 
-    observed_dates = []
-    for interval in observed_intervals:
-        dates = get_dates(interval)
-        observed_dates.append(dates[0])
-        observed_dates.append(dates[1])
+    if observed_items is not None:
+        observed_intervals = observed_items.get("interval")
 
-    return max(observed_dates)
+        observed_dates = []
+        for interval in observed_intervals:
+            dates = get_dates(interval)
+            observed_dates.append(dates[0])
+            observed_dates.append(dates[1])
+
+        last_date = max(observed_dates)
+    else:
+        last_date = None
+
+    return last_date
 
 
 def get_map_min_max(surface, attribute_settings, data):
