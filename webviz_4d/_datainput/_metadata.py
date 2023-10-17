@@ -20,6 +20,36 @@ def create_map_settings(
     return map_dict
 
 
+def define_map_defaults(map_defaults, selection_list, observations, simulations):
+    map1_defaults = map_defaults[0]
+    map2_defaults = map_defaults[1]
+    map3_defaults = map_defaults[2]
+    map_defaults = []
+
+    if map1_defaults is not None:
+        map_defaults.append(map1_defaults)
+
+    if map2_defaults is not None:
+        map_defaults.append(map2_defaults)
+
+    if map3_defaults is not None:
+        map_defaults.append(map3_defaults)
+
+    if map1_defaults is None or map2_defaults is None or map3_defaults is None:
+        map_defaults = get_map_defaults(
+            selection_list,
+            observations,
+            simulations,
+        )
+    else:
+        map_defaults = []
+        map_defaults.append(map1_defaults)
+        map_defaults.append(map2_defaults)
+        map_defaults.append(map3_defaults)
+
+    return map_defaults
+
+
 def get_map_defaults(selection_options, observations, simulations):
     observed_options = selection_options[observations]
     simulated_options = selection_options[simulations]

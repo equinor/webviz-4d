@@ -35,7 +35,8 @@ date_labels:
 
 polygon_colors:
     faults: gray 
-    owc_outline: lightslategray
+    goc: red
+    fwl: blue 
 
     
  
