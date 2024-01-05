@@ -1,7 +1,12 @@
+import os
 import pandas as pd
 import math
 import numpy as np
 import xtgeo
+import argparse
+from pathlib import Path
+
+from webviz_4d._datainput.common import read_config
 
 
 def load_well(well_path):
@@ -128,3 +133,41 @@ def get_well_polyline(
         "positions": positions,
         "tooltip": tooltip,
     }
+
+
+def get_path(path) -> Path:
+    return Path(path)
+
+
+def main():
+    """Test well data"""
+    description = "Test well data"
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("config_file", help="Enter path to the configuration file")
+
+    args = parser.parse_args()
+    config_file = args.config_file
+
+    config = read_config(config_file)
+    config_file = os.path.abspath(config_file)
+    config_folder = os.path.dirname(config_file)
+    config_folder = os.path.abspath(config_folder)
+
+    shared_settings = config.get("shared_settings")
+    well_data = shared_settings.get("well_data")
+    well_data = os.path.join(config_folder, well_data)
+    delta = 40
+
+    all_wells_info = pd.read_csv(os.path.join(well_data, "wellbore_info.csv"))
+    print(all_wells_info)
+
+    all_wells_info["file_name"] = all_wells_info["file_name"].apply(
+        lambda x: get_path(Path(x))
+    )
+
+    all_wells_df = load_all_wells(all_wells_info, delta)
+    print(all_wells_df)
+
+
+if __name__ == "__main__":
+    main()

@@ -32,11 +32,12 @@ def get_additional_well_layers(additional_well_layers):
 
 
 def get_polygon_tagnames(shared_settings, polygon_class):
-    polygon_configuration = shared_settings.get(polygon_class + "_polygon_layers")
+    polygon_layers = shared_settings.get(polygon_class + "_polygon_layers", None)
     polygon_tagnames = []
 
-    for _key, value in polygon_configuration.items():
-        tagname = value.get("tagname")
-        polygon_tagnames.append(tagname)
+    if polygon_layers is not None:
+        for _key, value in polygon_layers.items():
+            tagname = value.get("tagname")
+            polygon_tagnames.append(tagname)
 
     return polygon_tagnames

@@ -111,14 +111,6 @@ def get_update_dates(welldata, productiondata):
     return update_dates
 
 
-def get_position_data(well_dataframe, md_start):
-    """Return x- and y-values for a well after a given depth"""
-    well_dataframe = well_dataframe[well_dataframe["MD"] > md_start]
-    positions = well_dataframe[["X_UTME", "Y_UTMN"]].values
-
-    return positions
-
-
 def get_plot_label(configuration, interval):
     difference_mode = "normal"
     labels = []
