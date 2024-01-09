@@ -16,22 +16,13 @@ from webviz_4d._datainput.common import (
     get_map_min_max,
 )
 from webviz_4d._datainput.well import load_all_wells
-from webviz_4d._datainput._production import (
-    make_new_well_layer,
-)
+from webviz_4d._datainput._production import make_new_well_layer
 from webviz_4d._private_plugins.surface_selector import SurfaceSelector
 from webviz_4d._datainput._colormaps import load_custom_colormaps
-from webviz_4d._datainput._config import (
-    get_basic_well_layers,
-)
-from webviz_4d._datainput._polygons import (
-    make_polyline_layer,
-    get_polygon_name,
-    create_polygon_layer,
-)
-from webviz_4d._datainput._metadata import (
-    define_map_defaults,
-)
+from webviz_4d._datainput._config import get_basic_well_layers
+from webviz_4d._datainput._settings import get_color
+from webviz_4d._datainput._polygons import make_polyline_layer, get_polygon_name
+from webviz_4d._datainput._metadata import define_map_defaults
 from ._webvizstore import read_csv, read_csvs, find_files, get_path
 from ._callbacks import (
     set_first_map,
@@ -114,6 +105,8 @@ class SurfaceViewer4D(WebvizPluginABC):
             if surface_metadata_file is not None
             else None
         )
+
+        # Read selection options
         self.selector_file = selector_file
         self.selection_list = read_config(get_path(path=self.selector_file))
 
@@ -167,6 +160,8 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         # Top reservoir settings
         self.top_reservoir = self.shared_settings.get("top_reservoir", None)
+        self.realization = None
+        self.iteration = None
 
         # Polygons
         self.polygon_data = polygon_data
@@ -176,6 +171,8 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.additional_polygon_layers = []
 
         self.zone_polygon_layers = self.shared_settings.get("zone_polygon_layers")
+        self.realization = None
+        self.iteration = None
 
         # Create default FMU polygons layers
         if self.top_reservoir is not None:
@@ -184,9 +181,7 @@ class SurfaceViewer4D(WebvizPluginABC):
 
             if self.zone_polygon_layers:
                 for zone_polygon in self.zone_polygon_layers:
-                    layer = self.create_zone_polygon(
-                        zone_polygon, zone_name, None, None
-                    )
+                    layer = self.create_polygon_layer(zone_polygon, "zone", zone_name)
                     self.default_polygon_layers.append(layer)
 
         # Create additional polygon layers
@@ -198,7 +193,9 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         if self.additional_polygon_layers and len(self.additional_polygon_layers) > 0:
             for additional_polygon in self.additional_polygon_layers:
-                layer = self.create_additional_polygon(additional_polygon)
+                layer = self.create_polygon_layer(
+                    additional_polygon, "additional", None
+                )
                 self.additional_layers.append(layer)
 
         # Read update dates and well data
@@ -446,6 +443,8 @@ class SurfaceViewer4D(WebvizPluginABC):
         return min_max
 
     def make_map(self, data, iteration, real, attribute_settings, map_idx):
+        self.realization = real
+        self.iteration = iteration
         data = json.loads(data)
         selected_zone = data.get("name")
         map_type = self.map_defaults[map_idx]["map_type"]
@@ -476,8 +475,8 @@ class SurfaceViewer4D(WebvizPluginABC):
             # Check if there are polygons available for the selected zone
             if self.zone_polygon_layers and len(self.zone_polygon_layers) > 0:
                 for index, zone_polygon in enumerate(self.zone_polygon_layers):
-                    layer = self.create_zone_polygon(
-                        zone_polygon, selected_zone, real, iteration
+                    layer = self.create_polygon_layer(
+                        zone_polygon, "zone", selected_zone
                     )
 
                     if len(layer) == 0:
@@ -618,88 +617,67 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         return polygon_mapping
 
-    def create_zone_polygon(self, zone_polygon, zone_name, realization, iteration):
+    def create_polygon_layer(self, polygon, polygon_type, zone_name):
+        """Create a polygon layer which can either be a zone polygon or an additional polygon
+        Two types of polygons are supported:
+        - zone polygons (from the fmu execution)
+        - additional polygons (e.g. prm lines, shadow areas, ...)"""
         layer = {}
-        color = None
 
-        tagname = self.zone_polygon_layers.get(zone_polygon).get("tagname")
-        label = self.zone_polygon_layers.get(zone_polygon).get("label")
-        format = self.zone_polygon_layers.get(zone_polygon).get("format")
-        color_settings = self.settings.get("polygon_colors")
+        if polygon_type == "additional":
+            tagname = self.additional_polygon_layers.get(polygon).get("tagname")
+            label = self.additional_polygon_layers.get(polygon).get("label")
+            format = self.additional_polygon_layers.get(polygon).get("format")
+            tooltip = tagname
 
-        if color_settings:
-            color = color_settings.get(tagname)
+            polygon_file = os.path.join(
+                self.polygon_data,
+                tagname + "." + format,
+            )
+        elif polygon_type == "zone":
+            tagname = self.zone_polygon_layers.get(polygon).get("tagname")
+            label = self.zone_polygon_layers.get(polygon).get("label")
+            format = self.zone_polygon_layers.get(polygon).get("format")
 
-        if realization is None and iteration is None:
-            realization = self.top_reservoir.get("realization")
-            iteration = self.top_reservoir.get("iteration")
+            # Default polyons
+            if self.realization is None:
+                self.realization = self.top_reservoir.get("realization")
 
-        polygons_folder = os.path.join(
-            self.fmu_directory,
-            realization,
-            iteration,
-            self.top_reservoir.get("directory"),
-            self.top_reservoir.get("polygons_directory"),
-        )
-
-        if not os.path.exists(polygons_folder):
-            realization = self.top_reservoir.get("realization")
+            if self.iteration is None:
+                self.iteration = self.top_reservoir.get("iteration")
 
             polygons_folder = os.path.join(
                 self.fmu_directory,
-                realization,
-                iteration,
+                self.realization,
+                self.iteration,
                 self.top_reservoir.get("directory"),
                 self.top_reservoir.get("polygons_directory"),
             )
 
-        name = get_polygon_name(self.polygon_mapping, zone_name, tagname)
+            if not os.path.exists(polygons_folder):
+                # If the polygon file doesn't exist, use the default realization
 
-        tooltip = name + "-" + tagname
-        polygon_file = name + "--" + tagname + "." + format
-        polygon_file = os.path.join(polygons_folder, polygon_file)
-
-        if os.path.exists(polygon_file):
-            polygon_df = read_csv(polygon_file)
-            layer_df = create_polygon_layer(polygon_df)
-
-            if len(layer_df) > 0:
-                layer = make_polyline_layer(
-                    layer_df,
-                    format,
-                    tagname,
-                    label,
-                    tooltip,
-                    color,
+                polygons_folder = os.path.join(
+                    self.fmu_directory,
+                    self.realization,
+                    self.iteration,
+                    self.top_reservoir.get("directory"),
+                    self.top_reservoir.get("polygons_directory"),
                 )
 
-        return layer
-
-    def create_additional_polygon(self, additional_polygon):
-        layer = {}
-        color = None
-
-        tagname = self.additional_polygon_layers.get(additional_polygon).get("tagname")
-        label = self.additional_polygon_layers.get(additional_polygon).get("label")
-        format = self.additional_polygon_layers.get(additional_polygon).get("format")
-        tooltip = tagname
-        color_settings = self.settings.get("polygon_colors")
-
-        if color_settings:
-            color = color_settings.get(tagname)
-
-        polygon_file = os.path.join(
-            self.polygon_data,
-            tagname + "." + format,
-        )
+            name = get_polygon_name(self.polygon_mapping, zone_name, tagname)
+            tooltip = name + "-" + tagname
+            polygon_file = name + "--" + tagname + "." + format
+            polygon_file = os.path.join(polygons_folder, polygon_file)
 
         if os.path.exists(polygon_file):
+            print("Reading polygon file:", polygon_file)
             polygon_df = read_csv(polygon_file)
-            layer_df = create_polygon_layer(polygon_df)
+            color = get_color(self.settings, "polygon", polygon)
 
-            if len(layer_df) > 0:
+            if len(polygon_df) > 0 and "ID" in polygon_df.columns:
                 layer = make_polyline_layer(
-                    layer_df,
+                    polygon_df,
                     format,
                     tagname,
                     label,

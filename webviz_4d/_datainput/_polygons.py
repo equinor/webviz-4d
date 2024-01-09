@@ -110,9 +110,10 @@ def get_polygon_name(mapping, zone, polygon_type):
     return polygon_name
 
 
-def make_polyline_layer(dataframe, format, tagname, label, tooltip, color):
+def make_polyline_layer(polygon_df, format, tagname, label, tooltip, color):
     """Make layeredmap fault layer"""
     data = []
+    dataframe = create_polygon_layer(polygon_df)
 
     if dataframe.empty:
         print("WARNING: empty dataframe as input to make_polyline_layer")
