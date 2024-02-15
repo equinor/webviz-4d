@@ -8,9 +8,6 @@ default_colors = {
     "owc_outline": "lightslategray",
     "goc_outline": "red",
     "fault_lines": "gray",
-    "prm_receivers": "darkgray",
-    "4D_undershoot": "salmon",
-    "injectites": "khaki",
 }
 
 checked = {"OWC": True, "GOC": True, "FWL": True, "Faults": True, "Field outline": True}
