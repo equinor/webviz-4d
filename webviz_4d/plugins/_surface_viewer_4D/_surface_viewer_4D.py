@@ -88,8 +88,12 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.all_well_layers = self.basic_well_layers.update(additional_well_layers)
 
         # Load polygon mapping info
-        self.polygon_mapping_file = polygon_mapping_file
-        self.polygon_mapping = self.load_polygon_mapping(self.polygon_mapping_file)
+        if polygon_mapping_file:
+            self.polygon_mapping_file = polygon_mapping_file
+            self.polygon_mapping = self.load_polygon_mapping(self.polygon_mapping_file)
+        else:
+            print("WARNING: Polygon mapping not supplied")
+            self.polygon_mapping = pd.DataFrame()
 
         # Read production data
         self.prod_names = ["BORE_OIL_VOL.csv", "BORE_GI_VOL.csv", "BORE_WI_VOL.csv"]
@@ -131,8 +135,11 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.colormap_settings = None
         self.surface_scaling_file = surface_scaling_file
         if self.surface_scaling_file is not None:
-            print("Colormaps settings loaded from file", self.surface_scaling_file)
-            self.colormap_settings = read_csv(csv_file=self.surface_scaling_file)
+            if os.path.exists(self.surface_scaling_file):
+                print("Colormaps settings loaded from file", self.surface_scaling_file)
+                self.colormap_settings = read_csv(csv_file=self.surface_scaling_file)
+            else:
+                print("WARNING: File not found:", self.surface_scaling_file)
 
         # Read settings
         config_dir = os.path.dirname(os.path.abspath(self.selector_file))
@@ -614,6 +621,7 @@ class SurfaceViewer4D(WebvizPluginABC):
             polygon_mapping = read_csv(mapping_file)
         else:
             polygon_mapping = pd.DataFrame()
+            print("WARNING: Polygon mapping file not found", self.polygon_mapping_file)
 
         return polygon_mapping
 
@@ -639,7 +647,7 @@ class SurfaceViewer4D(WebvizPluginABC):
             label = self.zone_polygon_layers.get(polygon).get("label")
             format = self.zone_polygon_layers.get(polygon).get("format")
 
-            # Default polyons
+            # Default polygons
             if self.realization is None:
                 self.realization = self.top_reservoir.get("realization")
 
@@ -664,14 +672,17 @@ class SurfaceViewer4D(WebvizPluginABC):
                     self.top_reservoir.get("directory"),
                     self.top_reservoir.get("polygons_directory"),
                 )
+            if not self.polygon_mapping.empty:
+                name = get_polygon_name(self.polygon_mapping, zone_name, tagname)
+            else:
+                name = self.top_reservoir.get("polygon_name")
 
-            name = get_polygon_name(self.polygon_mapping, zone_name, tagname)
-            tooltip = name + "-" + tagname
-            polygon_file = name + "--" + tagname + "." + format
-            polygon_file = os.path.join(polygons_folder, polygon_file)
+        polygon_file = name + "--" + tagname + "." + format
+        polygon_file = os.path.join(polygons_folder, polygon_file)
 
         if os.path.exists(polygon_file):
             print("Reading polygon file:", polygon_file)
+            tooltip = name + "-" + tagname
             polygon_df = read_csv(polygon_file)
             color = get_color(self.settings, "polygon", polygon)
 
