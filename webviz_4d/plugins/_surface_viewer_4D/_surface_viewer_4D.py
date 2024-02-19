@@ -203,7 +203,9 @@ class SurfaceViewer4D(WebvizPluginABC):
                 layer = self.create_polygon_layer(
                     additional_polygon, "additional", None
                 )
-                self.additional_layers.append(layer)
+
+                if layer:
+                    self.additional_layers.append(layer)
 
         # Read update dates and well data
         #    self.drilled_wells_df: dataframe with wellpaths (x- and y positions) for all drilled wells
@@ -677,12 +679,14 @@ class SurfaceViewer4D(WebvizPluginABC):
             else:
                 name = self.top_reservoir.get("polygon_name")
 
-        polygon_file = name + "--" + tagname + "." + format
-        polygon_file = os.path.join(polygons_folder, polygon_file)
+            tooltip = name + "-" + tagname
+
+            polygon_file = name + "--" + tagname + "." + format
+            polygon_file = os.path.join(polygons_folder, polygon_file)
 
         if os.path.exists(polygon_file):
             print("Reading polygon file:", polygon_file)
-            tooltip = name + "-" + tagname
+
             polygon_df = read_csv(polygon_file)
             color = get_color(self.settings, "polygon", polygon)
 
@@ -697,6 +701,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                 )
             else:
                 print("WARNING: layer not created")
+                layer = None
 
         return layer
 
