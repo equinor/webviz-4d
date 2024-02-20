@@ -21,7 +21,11 @@ from webviz_4d._private_plugins.surface_selector import SurfaceSelector
 from webviz_4d._datainput._colormaps import load_custom_colormaps
 from webviz_4d._datainput._config import get_basic_well_layers
 from webviz_4d._datainput._settings import get_color
-from webviz_4d._datainput._polygons import make_polyline_layer, get_polygon_name
+from webviz_4d._datainput._polygons import (
+    make_polyline_layer,
+    get_polygon_name,
+    get_polygon_files,
+)
 from webviz_4d._datainput._metadata import define_map_defaults
 from ._webvizstore import read_csv, read_csvs, find_files, get_path
 from ._callbacks import (
@@ -87,10 +91,32 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.additional_well_layers = get_basic_well_layers(basic_well_layers)
         self.all_well_layers = self.basic_well_layers.update(additional_well_layers)
 
-        # Load polygon mapping info
+        # Top reservoir settings
+        self.top_reservoir = self.shared_settings.get("top_reservoir", None)
+        self.realization = None
+        self.iteration = None
+
+        # Read selection options
+        self.selector_file = selector_file
+        self.selection_dict = read_config(get_path(path=self.selector_file))
+
+        last_observed_date = get_last_date(self.selection_dict)
+
+        if last_observed_date is None:
+            last_observed_date = "9999-12-31"
+
+        self.last_observed_date = last_observed_date
+
+        # Get a list with filenames to all possible polygons
         if polygon_mapping_file:
             self.polygon_mapping_file = polygon_mapping_file
             self.polygon_mapping = self.load_polygon_mapping(self.polygon_mapping_file)
+
+            directory = self.top_reservoir.get("directory")
+            self.polygon_paths = get_polygon_files(
+                self.polygon_mapping, self.selection_dict, directory, self.fmu_directory
+            )
+
         else:
             print("WARNING: Polygon mapping not supplied")
             self.polygon_mapping = pd.DataFrame()
@@ -109,17 +135,6 @@ class SurfaceViewer4D(WebvizPluginABC):
             if surface_metadata_file is not None
             else None
         )
-
-        # Read selection options
-        self.selector_file = selector_file
-        self.selection_list = read_config(get_path(path=self.selector_file))
-
-        last_observed_date = get_last_date(self.selection_list)
-
-        if last_observed_date is None:
-            last_observed_date = "9999-12-31"
-
-        self.last_observed_date = last_observed_date
 
         # Read custom colormaps
         print("Reading custom colormaps from:", colormap_data)
@@ -160,15 +175,10 @@ class SurfaceViewer4D(WebvizPluginABC):
         map_defaults = [map1_defaults, map2_defaults, map3_defaults]
         self.map_defaults = define_map_defaults(
             map_defaults,
-            self.selection_list,
+            self.selection_dict,
             self.observations,
             self.simulations,
         )
-
-        # Top reservoir settings
-        self.top_reservoir = self.shared_settings.get("top_reservoir", None)
-        self.realization = None
-        self.iteration = None
 
         # Polygons
         self.polygon_data = polygon_data
@@ -223,9 +233,9 @@ class SurfaceViewer4D(WebvizPluginABC):
             self.create_well_layers()
 
         # Create selectors (attributes, names and dates) for all 3 maps
-        self.selector = SurfaceSelector(app, self.selection_list, self.map_defaults[0])
-        self.selector2 = SurfaceSelector(app, self.selection_list, self.map_defaults[1])
-        self.selector3 = SurfaceSelector(app, self.selection_list, self.map_defaults[2])
+        self.selector = SurfaceSelector(app, self.selection_dict, self.map_defaults[0])
+        self.selector2 = SurfaceSelector(app, self.selection_dict, self.map_defaults[1])
+        self.selector3 = SurfaceSelector(app, self.selection_dict, self.map_defaults[2])
         self.set_callbacks(app)
 
     def add_webvizstore(self) -> List[Tuple[Callable, list]]:
@@ -239,8 +249,6 @@ class SurfaceViewer4D(WebvizPluginABC):
             self.surface_metadata_file,
             self.surface_scaling_file,
             self.polygon_mapping_file,
-            self.zone_polygons_overview_file,
-            self.additional_polygons_overview_file,
         ]:
             if fn is not None:
                 store_functions.append(
@@ -260,24 +268,21 @@ class SurfaceViewer4D(WebvizPluginABC):
             )
 
         if self.polygon_data is not None:
-            for fn in list(self.zone_polygones_overview["file_name"]):
-                store_functions.append((get_path, [{"path": Path(fn)}]))
-
-            store_functions.append(
-                (get_path, [{"path": fn} for fn in self.zone_layers_files])
-            )
-
-            for fn in list(self.additional_polygones_overview["file_name"]):
-                store_functions.append((get_path, [{"path": Path(fn)}]))
-
-            store_functions.append(
-                (get_path, [{"path": fn} for fn in self.additional_layers_files])
-            )
-
-            if self.polygon_mapping_file is not None:
-                store_functions.append(
-                    (get_path, [{"path": Path(self.polygon_mapping_file)}])
+            for key in self.additional_polygon_layers.keys():
+                tagname = self.additional_polygon_layers.get(key).get("tagname")
+                file_format = self.additional_polygon_layers.get(key).get("format")
+                file_name = os.path.join(
+                    self.polygon_data,
+                    tagname + "." + file_format,
                 )
+                store_functions.append((get_path, [{"path": Path(file_name)}]))
+
+        if self.polygon_mapping_file is not None:
+            store_functions.append(
+                (get_path, [{"path": Path(self.polygon_mapping_file)}])
+            )
+            for fn in self.polygon_paths:
+                store_functions.append((get_path, [{"path": Path(fn)}]))
 
         if self.selector_file is not None:
             store_functions.append((get_path, [{"path": self.selector_file}]))
@@ -321,11 +326,11 @@ class SurfaceViewer4D(WebvizPluginABC):
 
     def iterations(self, map_number):
         map_type = self.map_defaults[map_number]["map_type"]
-        return self.selection_list[map_type]["iteration"]
+        return self.selection_dict[map_type]["iteration"]
 
     def realizations(self, map_number):
         map_type = self.map_defaults[map_number]["map_type"]
-        return self.selection_list[map_type]["realization"]
+        return self.selection_dict[map_type]["realization"]
 
     @property
     def layout(self):
@@ -640,9 +645,11 @@ class SurfaceViewer4D(WebvizPluginABC):
             format = self.additional_polygon_layers.get(polygon).get("format")
             tooltip = tagname
 
-            polygon_file = os.path.join(
-                self.polygon_data,
-                tagname + "." + format,
+            polygon_file = get_path(
+                os.path.join(
+                    self.polygon_data,
+                    tagname + "." + format,
+                )
             )
         elif polygon_type == "zone":
             tagname = self.zone_polygon_layers.get(polygon).get("tagname")
@@ -666,7 +673,6 @@ class SurfaceViewer4D(WebvizPluginABC):
 
             if not os.path.exists(polygons_folder):
                 # If the polygon file doesn't exist, use the default realization
-
                 polygons_folder = os.path.join(
                     self.fmu_directory,
                     self.realization,
@@ -674,6 +680,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                     self.top_reservoir.get("directory"),
                     self.top_reservoir.get("polygons_directory"),
                 )
+
             if not self.polygon_mapping.empty:
                 name = get_polygon_name(self.polygon_mapping, zone_name, tagname)
             else:

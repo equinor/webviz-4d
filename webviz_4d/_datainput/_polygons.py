@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import json
 
@@ -164,3 +165,41 @@ def get_polyline(layer, tooltip, color):
         print("Input layer:")
         print(layer)
         return {}
+
+
+def get_polygon_files(polygon_mapping, selection_list, directory, fmu_dir):
+    # Create a list with filenames to all possible polygons
+    polygon_overview = {}
+    paths = []
+
+    # Create polygon overview
+    polygon_types = polygon_mapping.columns[1:]
+
+    for polygon_type in polygon_types:
+        surface_names = polygon_mapping[polygon_type].to_list()
+        unique_names = list(set(surface_names))
+        polygon_overview.update({polygon_type: unique_names})
+
+    realizations = selection_list.get("simulated").get("realization")
+    iterations = selection_list.get("simulated").get("iteration")
+
+    for realization in realizations:
+        if "realization" in realization:
+            for iteration in iterations:
+                for polygon_type in polygon_overview.keys():
+                    surfaces = polygon_overview.get(polygon_type)
+
+                    for surface in surfaces:
+                        file_name = surface + "--" + polygon_type + ".csv"
+                        path = os.path.join(
+                            fmu_dir,
+                            realization,
+                            iteration,
+                            directory,
+                            "polygons",
+                            file_name,
+                        )
+
+                        paths.append(path)
+
+    return paths
