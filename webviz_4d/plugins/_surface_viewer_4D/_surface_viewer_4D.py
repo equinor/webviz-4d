@@ -116,7 +116,6 @@ class SurfaceViewer4D(WebvizPluginABC):
             self.polygon_paths = get_polygon_files(
                 self.polygon_mapping, self.selection_dict, directory, self.fmu_directory
             )
-
         else:
             print("WARNING: Polygon mapping not supplied")
             self.polygon_mapping = pd.DataFrame()
@@ -149,12 +148,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         # Read attribute maps settings (min-/max-values)
         self.colormap_settings = None
         self.surface_scaling_file = surface_scaling_file
-        if self.surface_scaling_file is not None:
-            if os.path.exists(self.surface_scaling_file):
-                print("Colormaps settings loaded from file", self.surface_scaling_file)
-                self.colormap_settings = read_csv(csv_file=self.surface_scaling_file)
-            else:
-                print("WARNING: File not found:", self.surface_scaling_file)
+        self.surface_scaling = self.load_surface_scaling(self.surface_scaling_file)
 
         # Read settings
         config_dir = os.path.dirname(os.path.abspath(self.selector_file))
@@ -245,20 +239,29 @@ class SurfaceViewer4D(WebvizPluginABC):
                 [{"folder": self.prod_folder, "csv_files": self.prod_names}],
             )
         ]
-        for fn in [
-            self.surface_metadata_file,
-            self.surface_scaling_file,
-            self.polygon_mapping_file,
-        ]:
-            if fn is not None:
-                store_functions.append(
-                    (
-                        read_csv,
-                        [
-                            {"csv_file": fn},
-                        ],
-                    )
-                )
+
+        if self.polygon_mapping_file is not None:
+            store_functions.append(
+                (get_path, [{"path": Path(self.polygon_mapping_file)}])
+            )
+            print("DEBUG store", self.polygon_mapping_file)
+            print(
+                "DEBUG store", (get_path, [{"path": Path(self.polygon_mapping_file)}])
+            )
+
+            for fn in self.polygon_paths:
+                store_functions.append((get_path, [{"path": Path(fn)}]))
+                print("DEBUG store", fn)
+                print("DEBUG store", (get_path, [{"path": Path(fn)}]))
+
+        store_functions.append(
+            (read_csv, [{"csv_file": Path(self.surface_metadata_file)}])
+        )
+        if self.surface_scaling_file is not None:
+            store_functions.append(
+                (get_path, [{"path": Path(self.surface_scaling_file)}])
+            )
+
         if self.colormap_data is not None:
             store_functions.append(
                 (find_files, [{"folder": self.colormap_data, "suffix": ".csv"}])
@@ -275,17 +278,11 @@ class SurfaceViewer4D(WebvizPluginABC):
                     self.polygon_data,
                     tagname + "." + file_format,
                 )
+                print("DEBUG store", file_name)
                 store_functions.append((get_path, [{"path": Path(file_name)}]))
 
-        if self.polygon_mapping_file is not None:
-            store_functions.append(
-                (get_path, [{"path": Path(self.polygon_mapping_file)}])
-            )
-            for fn in self.polygon_paths:
-                store_functions.append((get_path, [{"path": Path(fn)}]))
-
         if self.selector_file is not None:
-            store_functions.append((get_path, [{"path": self.selector_file}]))
+            store_functions.append((get_path, [{"path": Path(self.selector_file)}]))
 
         if self.well_data is not None:
             store_functions.append(
@@ -625,10 +622,21 @@ class SurfaceViewer4D(WebvizPluginABC):
         print("Reading polygon mapping from", mapping_file)
 
         if os.path.exists(get_path(mapping_file)):
-            polygon_mapping = read_csv(mapping_file)
+            polygon_mapping = pd.read_csv(mapping_file)
         else:
             polygon_mapping = pd.DataFrame()
             print("WARNING: Polygon mapping file not found", self.polygon_mapping_file)
+
+        return polygon_mapping
+
+    def load_surface_scaling(self, surface_scaling_file):
+        print("Reading surface scaling from", surface_scaling_file)
+
+        if os.path.exists(get_path(surface_scaling_file)):
+            polygon_mapping = pd.read_csv(surface_scaling_file)
+        else:
+            polygon_mapping = pd.DataFrame()
+            print("WARNING: Surface scaling file not found", self.surface_scaling_file)
 
         return polygon_mapping
 
@@ -645,12 +653,11 @@ class SurfaceViewer4D(WebvizPluginABC):
             format = self.additional_polygon_layers.get(polygon).get("format")
             tooltip = tagname
 
-            polygon_file = get_path(
-                os.path.join(
-                    self.polygon_data,
-                    tagname + "." + format,
-                )
+            polygon_file = os.path.join(
+                self.polygon_data,
+                tagname + "." + format,
             )
+
         elif polygon_type == "zone":
             tagname = self.zone_polygon_layers.get(polygon).get("tagname")
             label = self.zone_polygon_layers.get(polygon).get("label")
@@ -691,10 +698,16 @@ class SurfaceViewer4D(WebvizPluginABC):
             polygon_file = name + "--" + tagname + "." + format
             polygon_file = os.path.join(polygons_folder, polygon_file)
 
-        if os.path.exists(polygon_file):
-            print("Reading polygon file:", polygon_file)
+            if polygon_file in self.polygon_paths:
+                print("DEBUG found in polygon_paths", polygon_file)
+            else:
+                print("DEBUG not found in polygon_paths", polygon_file)
+                print(self.polygon_paths)
 
-            polygon_df = read_csv(polygon_file)
+        print("Reading polygon file:", polygon_file)
+        print(" - ", get_path(polygon_file))
+        if os.path.exists(get_path(polygon_file)):
+            polygon_df = pd.read_csv(get_path(polygon_file))
             color = get_color(self.settings, "polygon", polygon)
 
             if len(polygon_df) > 0 and "ID" in polygon_df.columns:
