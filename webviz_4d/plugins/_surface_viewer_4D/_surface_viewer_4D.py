@@ -93,8 +93,8 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         # Top reservoir settings
         self.top_reservoir = self.shared_settings.get("top_reservoir", None)
-        self.realization = None
-        self.iteration = None
+        self.realization = self.top_reservoir.get("realization", "realization-0")
+        self.iteration = self.top_reservoir.get("iteration", "iter-0")
 
         # Read selection options
         self.selector_file = selector_file
@@ -182,8 +182,6 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.additional_polygon_layers = []
 
         self.zone_polygon_layers = self.shared_settings.get("zone_polygon_layers")
-        self.realization = None
-        self.iteration = None
 
         # Create default FMU polygons layers
         if self.top_reservoir is not None:
@@ -272,7 +270,6 @@ class SurfaceViewer4D(WebvizPluginABC):
                     self.polygon_data,
                     tagname + "." + file_format,
                 )
-                print("DEBUG store", file_name)
                 store_functions.append((get_path, [{"path": Path(file_name)}]))
 
         if self.selector_file is not None:
@@ -658,10 +655,10 @@ class SurfaceViewer4D(WebvizPluginABC):
             format = self.zone_polygon_layers.get(polygon).get("format")
 
             # Default polygons
-            if self.realization is None:
+            if self.realization == "---":
                 self.realization = self.top_reservoir.get("realization")
 
-            if self.iteration is None:
+            if self.iteration == "---":
                 self.iteration = self.top_reservoir.get("iteration")
 
             polygons_folder = os.path.join(
@@ -676,8 +673,8 @@ class SurfaceViewer4D(WebvizPluginABC):
                 # If the polygon file doesn't exist, use the default realization
                 polygons_folder = os.path.join(
                     self.fmu_directory,
-                    self.realization,
-                    self.iteration,
+                    self.top_reservoir.get("realization"),
+                    self.top_reservoir.get("iteration"),
                     self.top_reservoir.get("directory"),
                     self.top_reservoir.get("polygons_directory"),
                 )
@@ -691,9 +688,6 @@ class SurfaceViewer4D(WebvizPluginABC):
 
             polygon_file = name + "--" + tagname + "." + format
             polygon_file = os.path.join(polygons_folder, polygon_file)
-
-            if polygon_file not in self.polygon_paths:
-                print("DEBUG not found in polygon_paths", polygon_file)
 
         print("Reading polygon file:", polygon_file)
         if os.path.exists(get_path(Path(polygon_file))):
