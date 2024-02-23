@@ -244,15 +244,9 @@ class SurfaceViewer4D(WebvizPluginABC):
             store_functions.append(
                 (get_path, [{"path": Path(self.polygon_mapping_file)}])
             )
-            print("DEBUG store", self.polygon_mapping_file)
-            print(
-                "DEBUG store", (get_path, [{"path": Path(self.polygon_mapping_file)}])
-            )
 
             for fn in self.polygon_paths:
                 store_functions.append((get_path, [{"path": Path(fn)}]))
-                print("DEBUG store", fn)
-                print("DEBUG store", (get_path, [{"path": Path(fn)}]))
 
         store_functions.append(
             (read_csv, [{"csv_file": Path(self.surface_metadata_file)}])
@@ -698,16 +692,12 @@ class SurfaceViewer4D(WebvizPluginABC):
             polygon_file = name + "--" + tagname + "." + format
             polygon_file = os.path.join(polygons_folder, polygon_file)
 
-            if polygon_file in self.polygon_paths:
-                print("DEBUG found in polygon_paths", polygon_file)
-            else:
+            if polygon_file not in self.polygon_paths:
                 print("DEBUG not found in polygon_paths", polygon_file)
-                print(self.polygon_paths)
 
         print("Reading polygon file:", polygon_file)
-        print(" - ", get_path(polygon_file))
-        if os.path.exists(get_path(polygon_file)):
-            polygon_df = pd.read_csv(get_path(polygon_file))
+        if os.path.exists(get_path(Path(polygon_file))):
+            polygon_df = pd.read_csv(get_path(Path(polygon_file)))
             color = get_color(self.settings, "polygon", polygon)
 
             if len(polygon_df) > 0 and "ID" in polygon_df.columns:
