@@ -98,6 +98,7 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         # Read selection options
         self.selector_file = selector_file
+        selector_file = get_path(selector_file)
         self.selection_dict = read_config(get_path(path=self.selector_file))
 
         last_observed_date = get_last_date(self.selection_dict)
@@ -273,7 +274,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                 store_functions.append((get_path, [{"path": Path(file_name)}]))
 
         if self.selector_file is not None:
-            store_functions.append((get_path, [{"path": Path(self.selector_file)}]))
+            store_functions.append((get_path, [{"path": self.selector_file}]))
 
         if self.well_data is not None:
             store_functions.append(
@@ -613,7 +614,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         print("Reading polygon mapping from", mapping_file)
 
         if os.path.exists(get_path(mapping_file)):
-            polygon_mapping = pd.read_csv(mapping_file)
+            polygon_mapping = pd.read_csv(get_path(mapping_file))
         else:
             polygon_mapping = pd.DataFrame()
             print("WARNING: Polygon mapping file not found", self.polygon_mapping_file)
@@ -624,7 +625,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         print("Reading surface scaling from", surface_scaling_file)
 
         if os.path.exists(get_path(surface_scaling_file)):
-            polygon_mapping = pd.read_csv(surface_scaling_file)
+            polygon_mapping = pd.read_csv(get_path(surface_scaling_file))
         else:
             polygon_mapping = pd.DataFrame()
             print("WARNING: Surface scaling file not found", self.surface_scaling_file)
@@ -648,6 +649,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                 self.polygon_data,
                 tagname + "." + format,
             )
+            self.polygon_paths.append(polygon_file)
 
         elif polygon_type == "zone":
             tagname = self.zone_polygon_layers.get(polygon).get("tagname")
