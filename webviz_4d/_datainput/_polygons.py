@@ -1,15 +1,14 @@
+import os
 import pandas as pd
 import json
 
 
 default_colors = {
     "field_outline": "lightslategray",
+    "fwl": "lightslategray",
     "owc_outline": "lightslategray",
     "goc_outline": "red",
-    "faults": "gray",
-    "prm_receivers": "darkgray",
-    "4D_undershoot": "salmon",
-    "injectites": "khaki",
+    "fault_lines": "gray",
 }
 
 checked = {"OWC": True, "GOC": True, "FWL": True, "Faults": True, "Field outline": True}
@@ -27,160 +26,18 @@ def get_position_data(polyline):
     return positions
 
 
-def create_polyline(polygon_row, polygon_info):
-    """Create polyline data - polylines, color and tooltip"""
-
-    zone = polygon_info.get("zone")
-    year = polygon_row.get("year")
-    line = polygon_row.get("line")
-    zone = polygon_info.get("zone")
-
-    if zone is not None:
-        tooltip = zone + "-" + polygon_info.get("tagname")
-    elif year is not None:
-        tooltip = str(year) + "-line " + str(line)
-    else:
-        tooltip = polygon_info.get("tagname")
-
-    color = polygon_info.get("color")
-
-    positions = get_position_data(polygon_row)
-
-    if positions:
-        return {
-            "type": "polyline",
-            "color": color,
-            "positions": positions,
-            "tooltip": tooltip,
-        }
-
-
-def create_prm_polyline(polygon_row, polygon_info):
-    """Create polyline data - prm receiver polylines, color and tooltip"""
-    year = polygon_row["year"]
-    line = polygon_row["line"]
-    tooltip = str(year) + "-line " + str(line)
-    color = polygon_info.get("color")
-
-    positions = get_position_data(polygon_row)
-
-    if positions:
-        return {
-            "type": "polyline",
-            "color": color,
-            "positions": positions,
-            "tooltip": tooltip,
-        }
-
-
-def get_contact_polyline(contact, key, label, color):
-    """Create polyline data - owc polyline, color and tooltip"""
-    data = []
-    tooltip = label
-
-    coordinates_txt = contact["coordinates"][0]
-    coordinates = json.loads(coordinates_txt)
-
-    if color is None:
-        color = default_colors.get(key)
-
-    for i in range(0, len(coordinates)):
-        positions = coordinates[i]
-
-        if positions:
-            polyline_data = {
-                "type": "polyline",
-                "color": color,
-                "positions": positions,
-                "tooltip": tooltip,
-            }
-
-            data.append(polyline_data)
-
-    return data
-
-
-def make_polyline_layer(dataframe, polygon_info):
-    """Make layeredmap fault layer"""
-    data = []
-    layer = {}
-
-    for _index, row in dataframe.iterrows():
-        polyline_data = create_polyline(row, polygon_info)
-
-        if polyline_data:
-            data.append(polyline_data)
-            label = polygon_info.get("label")
-
-    if data:
-        checked_state = checked.get(label, False)
-        layer = {
-            "name": label,
-            "checked": checked_state,
-            "base_layer": False,
-            "data": data,
-        }
-
-    return layer
-
-
-def make_prm_polyline_layer(dataframe, polygon_info):
-    """Make layeredmap fault layer"""
-    data = []
-    layer = {}
-
-    for _index, row in dataframe.iterrows():
-        polyline_data = create_prm_polyline(row, polygon_info)
-
-        if polyline_data:
-            data.append(polyline_data)
-            label = polygon_info.get("label")
-
-    if data:
-        checked_state = checked.get(label, False)
-        layer = {
-            "name": label,
-            "checked": checked_state,
-            "base_layer": False,
-            "data": data,
-        }
-
-    return layer
-
-
-def create_fault_layer(faults_df, name):
-    layer_df = pd.DataFrame()
-    seg_id = []
-    coordinates = []
-    coordinates_row = []
-
-    id = 0
-    for _index, row in faults_df.iterrows():
-        utmx = float(row["X_UTME"])
-        utmy = float(row["Y_UTMN"])
-
-        if utmx > 1000.0 and utmy > 1000.0:
-            coordinates_row.append([utmx, utmy])
-            id = id + 1
-        else:
-            seg_id.append(int(id))
-            coordinates.append(coordinates_row)
-            coordinates_row = []
-
-    layer_df["SEG I.D."] = seg_id
-    layer_df["geometry"] = "Polygon"
-    layer_df["coordinates"] = coordinates
-    layer_df["name"] = name
-
-    return layer_df
-
-
 def has_header(df):
+    """Check if a dataframe has headers and that one of them is X"""
     try:
         number = float(df.columns[0])
         status = False
     except:
         status = True
+
+        if "X" in df.columns:
+            status = True
+        else:
+            status = False
 
     return status
 
@@ -190,10 +47,15 @@ def create_polygon_layer(polygon_df):
     all_positions = []
     positions = []
     ids = []
+    tooltips = []
+    tooltip = None
+
+    polygon_df.dropna(subset=["ID"], inplace=True)
 
     if has_header(polygon_df):
         for _index, row in polygon_df.iterrows():
-            position = [row["X"], row["Y"]]
+            if "tooltip" in polygon_df.columns:
+                tooltip = row["tooltip"]
 
             if _index == 0:
                 poly_id = row["ID"]
@@ -205,69 +67,40 @@ def create_polygon_layer(polygon_df):
                 all_positions.append(positions)
                 positions = []
                 poly_id = row["ID"]
+
                 position = [row["X"], row["Y"]]
                 positions.append(position)
+
                 ids.append(poly_id)
+
+                if tooltip:
+                    tooltips.append(tooltip)
 
         # Add last line
         all_positions.append(positions)
         ids.append(poly_id)
 
+        if tooltip:
+            tooltips.append(tooltip)
     else:
-        id = 0
-        for _index, row in polygon_df.iterrows():
-            utmx = float(row[0])
-            utmy = float(row[1])
-
-            if utmx > 1000.0 and utmy > 1000.0:
-                positions.append([utmx, utmy])
-                id = id + 1
-            else:
-                ids.append(id)
-                all_positions.append(positions)
-                positions = []
+        return pd.DataFrame()
 
     layer_df = pd.DataFrame()
     layer_df["id"] = ids
     layer_df["geometry"] = "Polygon"
     layer_df["coordinates"] = all_positions
 
+    if len(tooltips) > 0:
+        layer_df["tooltip"] = tooltips
+
     return layer_df
 
 
-def get_polygon_info(layer_file, polygones_overview, settings):
-    default_color = "black"
-
-    info = polygones_overview[polygones_overview["file_name"] == layer_file]
-
-    polygon_name = info["name"].values[0]
-    polygon_type = info["type"].values[0]
-    polygon_tagname = info["tagname"].values[0]
-    polygon_label = info["label"].values[0]
-
-    polygon_colors = settings.get("polygon_colors")
-
-    if polygon_colors:
-        color = polygon_colors.get(polygon_type, default_color)
-    else:
-        color = default_color
-
-    keys = ["type", "zone", "tagname", "label", "color"]
-    values = [polygon_type, polygon_name, polygon_tagname, polygon_label, color]
-
-    polygon_info = {keys[i]: values[i] for i in range(len(keys))}
-
-    return polygon_info
-
-
 def get_polygon_name(mapping, zone, polygon_type):
-    polygon_name = None
+    polygon_name = zone
 
-    selected_row = mapping[
-        (mapping["surface_name"] == zone) & (mapping["polygon_type"] == polygon_type)
-    ]
-
-    selected_name = selected_row["polygon_name"]
+    selected_row = mapping[(mapping["surface_name"] == zone)]
+    selected_name = selected_row[polygon_type]
 
     if len(selected_name) == 1:
         polygon_name = selected_name.values[0]
@@ -275,17 +108,98 @@ def get_polygon_name(mapping, zone, polygon_type):
     return polygon_name
 
 
-def get_polygon_layer(polygon_layers, selected_name, selected_tagname):
-    layer = None
+def make_polyline_layer(polygon_df, format, tagname, label, tooltip, color):
+    """Make layeredmap fault layer"""
+    data = []
+    dataframe = create_polygon_layer(polygon_df)
 
-    for polygon_layer in polygon_layers:
-        polygon_data = polygon_layer.get("data")[0]
-        tooltip = polygon_data.get("tooltip")
-        tooltip_items = tooltip.split("-")
-        name = tooltip_items[0]
-        tagname = tooltip_items[1]
+    if dataframe.empty:
+        print("WARNING: empty dataframe as input to make_polyline_layer")
+        return None
 
-        if name == selected_name and tagname == selected_tagname:
-            layer = polygon_layer
+    if color == None:
+        color = default_colors.get(tagname)
+
+    if format == "csv":
+        for _index, row in dataframe.iterrows():
+            if "tooltip" in dataframe.columns:
+                tooltip = row["tooltip"]
+
+            polyline_data = get_polyline(row, tooltip, color)
+
+            if polyline_data:
+                data.append(polyline_data)
+    else:
+        print("ERROR unknown format:", format)
+
+    if data:
+        checked_state = checked.get(label)
+        layer = {
+            "name": label,
+            "checked": checked_state,
+            "base_layer": False,
+            "data": data,
+        }
+    else:
+        layer = None
 
     return layer
+
+
+def get_polyline(layer, tooltip, color):
+    """Create polyline data - based on coordinates, color and tooltip"""
+    if color is None:
+        color = "black"
+
+    positions = layer["coordinates"]
+
+    if positions:
+        return {
+            "type": "polyline",
+            "color": color,
+            "positions": positions,
+            "tooltip": tooltip,
+        }
+    else:
+        print("WARNING: not possible to create layer")
+        print("Input layer:")
+        print(layer)
+        return {}
+
+
+def get_polygon_files(polygon_mapping, selection_list, directory, fmu_dir):
+    # Create a list with filenames to all possible polygons
+    polygon_overview = {}
+    paths = []
+
+    # Create polygon overview
+    polygon_types = polygon_mapping.columns[1:]
+
+    for polygon_type in polygon_types:
+        surface_names = polygon_mapping[polygon_type].to_list()
+        unique_names = list(set(surface_names))
+        polygon_overview.update({polygon_type: unique_names})
+
+    realizations = selection_list.get("simulated").get("realization")
+    iterations = selection_list.get("simulated").get("iteration")
+
+    for realization in realizations:
+        if "realization" in realization:
+            for iteration in iterations:
+                for polygon_type in polygon_overview.keys():
+                    surfaces = polygon_overview.get(polygon_type)
+
+                    for surface in surfaces:
+                        file_name = surface + "--" + polygon_type + ".csv"
+                        path = os.path.join(
+                            fmu_dir,
+                            realization,
+                            iteration,
+                            directory,
+                            "polygons",
+                            file_name,
+                        )
+
+                        paths.append(path)
+
+    return paths

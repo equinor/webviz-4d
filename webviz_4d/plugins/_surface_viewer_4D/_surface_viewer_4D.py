@@ -16,24 +16,17 @@ from webviz_4d._datainput.common import (
     get_map_min_max,
 )
 from webviz_4d._datainput.well import load_all_wells
-from webviz_4d._datainput._production import (
-    make_new_well_layer,
-)
+from webviz_4d._datainput._production import make_new_well_layer
 from webviz_4d._private_plugins.surface_selector import SurfaceSelector
 from webviz_4d._datainput._colormaps import load_custom_colormaps
-from webviz_4d._datainput._config import (
-    get_basic_well_layers,
-    get_polygon_tagnames,
-)
+from webviz_4d._datainput._config import get_basic_well_layers
+from webviz_4d._datainput._settings import get_color
 from webviz_4d._datainput._polygons import (
-    get_polygon_info,
     make_polyline_layer,
     get_polygon_name,
-    get_polygon_layer,
+    get_polygon_files,
 )
-from webviz_4d._datainput._metadata import (
-    define_map_defaults,
-)
+from webviz_4d._datainput._metadata import define_map_defaults
 from ._webvizstore import read_csv, read_csvs, find_files, get_path
 from ._callbacks import (
     set_first_map,
@@ -60,7 +53,6 @@ class SurfaceViewer4D(WebvizPluginABC):
         map3_defaults: dict = None,
         map_suffix: str = ".gri",
         settings_file: Path = None,
-        delimiter: str = "--",
         surface_metadata_file: Path = None,
         surface_scaling_file: Path = None,
         interval_mode: str = "normal",
@@ -75,7 +67,6 @@ class SurfaceViewer4D(WebvizPluginABC):
         additional_well_layers = self.shared_settings.get("additional_well_layers")
 
         self.map_suffix = map_suffix
-        # self.delimiter = delimiter
         self.interval_mode = interval_mode
 
         self.number_of_maps = 3
@@ -100,9 +91,35 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.additional_well_layers = get_basic_well_layers(basic_well_layers)
         self.all_well_layers = self.basic_well_layers.update(additional_well_layers)
 
-        # Load polygon info
-        self.polygon_mapping_file = polygon_mapping_file
-        self.polygon_mapping = self.load_polygon_mapping(self.polygon_mapping_file)
+        # Top reservoir settings
+        self.top_reservoir = self.shared_settings.get("top_reservoir", None)
+        self.realization = self.top_reservoir.get("realization", "realization-0")
+        self.iteration = self.top_reservoir.get("iteration", "iter-0")
+
+        # Read selection options
+        self.selector_file = selector_file
+        selector_file = get_path(selector_file)
+        self.selection_dict = read_config(get_path(path=self.selector_file))
+
+        last_observed_date = get_last_date(self.selection_dict)
+
+        if last_observed_date is None:
+            last_observed_date = "9999-12-31"
+
+        self.last_observed_date = last_observed_date
+
+        # Get a list with filenames to all possible polygons
+        if polygon_mapping_file:
+            self.polygon_mapping_file = polygon_mapping_file
+            self.polygon_mapping = self.load_polygon_mapping(self.polygon_mapping_file)
+
+            directory = self.top_reservoir.get("directory")
+            self.polygon_paths = get_polygon_files(
+                self.polygon_mapping, self.selection_dict, directory, self.fmu_directory
+            )
+        else:
+            print("WARNING: Polygon mapping not supplied")
+            self.polygon_mapping = pd.DataFrame()
 
         # Read production data
         self.prod_names = ["BORE_OIL_VOL.csv", "BORE_GI_VOL.csv", "BORE_WI_VOL.csv"]
@@ -118,15 +135,6 @@ class SurfaceViewer4D(WebvizPluginABC):
             if surface_metadata_file is not None
             else None
         )
-        self.selector_file = selector_file
-        self.selection_list = read_config(get_path(path=self.selector_file))
-
-        last_observed_date = get_last_date(self.selection_list)
-
-        if last_observed_date is None:
-            last_observed_date = "9999-12-31"
-
-        self.last_observed_date = last_observed_date
 
         # Read custom colormaps
         print("Reading custom colormaps from:", colormap_data)
@@ -141,9 +149,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         # Read attribute maps settings (min-/max-values)
         self.colormap_settings = None
         self.surface_scaling_file = surface_scaling_file
-        if self.surface_scaling_file is not None:
-            print("Colormaps settings loaded from file", self.surface_scaling_file)
-            self.colormap_settings = read_csv(csv_file=self.surface_scaling_file)
+        self.surface_scaling = self.load_surface_scaling(self.surface_scaling_file)
 
         # Read settings
         config_dir = os.path.dirname(os.path.abspath(self.selector_file))
@@ -164,62 +170,45 @@ class SurfaceViewer4D(WebvizPluginABC):
         map_defaults = [map1_defaults, map2_defaults, map3_defaults]
         self.map_defaults = define_map_defaults(
             map_defaults,
-            self.selection_list,
+            self.selection_dict,
             self.observations,
             self.simulations,
         )
 
-        # Load polygons
+        # Polygons
         self.polygon_data = polygon_data
-        self.zone_polygon_tagnames = get_polygon_tagnames(self.shared_settings, "zone")
-        self.additional_polygon_tagnames = get_polygon_tagnames(
-            self.shared_settings, "additional"
+        self.default_polygon_layers = []
+        self.zone_polygon_tagnames = []
+        self.zone_polygon_layers = []
+        self.additional_polygon_layers = []
+
+        self.zone_polygon_layers = self.shared_settings.get("zone_polygon_layers")
+
+        # Create default FMU polygons layers
+        if self.top_reservoir is not None:
+            self.zone_polygon_layers = self.shared_settings.get("zone_polygon_layers")
+            zone_name = self.top_reservoir.get("polygon_name")
+
+            if self.zone_polygon_layers:
+                for zone_polygon in self.zone_polygon_layers:
+                    layer = self.create_polygon_layer(zone_polygon, "zone", zone_name)
+                    self.default_polygon_layers.append(layer)
+
+        # Create additional polygon layers
+        self.additional_polygon_layers = self.shared_settings.get(
+            "additional_polygon_layers"
         )
 
-        self.polygon_layers = None
-        self.zone_polygon_layers = None
-        self.additional_polygon_layers = None
+        self.additional_layers = []
 
-        if self.polygon_data is not None:
-            # Load zone faults if existing
-            self.zone_polygons_overview_file = Path(
-                os.path.join(self.polygon_data, "zone_layers_overview.csv")
-            )
-            self.zone_polygones_overview = read_csv(self.zone_polygons_overview_file)
-            self.zone_layers_folder = Path(
-                os.path.join(self.polygon_data, "zone_layers")
-            )
+        if self.additional_polygon_layers and len(self.additional_polygon_layers) > 0:
+            for additional_polygon in self.additional_polygon_layers:
+                layer = self.create_polygon_layer(
+                    additional_polygon, "additional", None
+                )
 
-            print("Reading zone polygons from:", self.zone_layers_folder)
-            self.zone_layers_files = self.zone_polygones_overview["file_name"].values
-
-            self.zone_polygon_config = self.shared_settings.get("zone_polygon_layers")
-            self.zone_polygon_layers = self.load_zone_polygons(
-                self.zone_layers_files, self.settings
-            )
-
-            # Load additional faults if existing
-            self.additional_polygons_overview_file = Path(
-                os.path.join(self.polygon_data, "additional_layers_overview.csv")
-            )
-            self.additional_polygones_overview = read_csv(
-                self.additional_polygons_overview_file
-            )
-
-            self.additional_layers_folder = Path(
-                os.path.join(self.polygon_data, "additional_layers")
-            )
-            print("Reading additional polygons from:", self.additional_layers_folder)
-            self.additional_layers_files = self.additional_polygones_overview[
-                "file_name"
-            ].values
-
-            self.additional_polygon_config = self.shared_settings.get(
-                "additional_polygon_layers"
-            )
-            self.additional_polygon_layers = self.load_additional_polygons(
-                self.additional_layers_files, self.settings
-            )
+                if layer:
+                    self.additional_layers.append(layer)
 
         # Read update dates and well data
         #    self.drilled_wells_df: dataframe with wellpaths (x- and y positions) for all drilled wells
@@ -237,9 +226,9 @@ class SurfaceViewer4D(WebvizPluginABC):
             self.create_well_layers()
 
         # Create selectors (attributes, names and dates) for all 3 maps
-        self.selector = SurfaceSelector(app, self.selection_list, self.map_defaults[0])
-        self.selector2 = SurfaceSelector(app, self.selection_list, self.map_defaults[1])
-        self.selector3 = SurfaceSelector(app, self.selection_list, self.map_defaults[2])
+        self.selector = SurfaceSelector(app, self.selection_dict, self.map_defaults[0])
+        self.selector2 = SurfaceSelector(app, self.selection_dict, self.map_defaults[1])
+        self.selector3 = SurfaceSelector(app, self.selection_dict, self.map_defaults[2])
         self.set_callbacks(app)
 
     def add_webvizstore(self) -> List[Tuple[Callable, list]]:
@@ -249,22 +238,23 @@ class SurfaceViewer4D(WebvizPluginABC):
                 [{"folder": self.prod_folder, "csv_files": self.prod_names}],
             )
         ]
-        for fn in [
-            self.surface_metadata_file,
-            self.surface_scaling_file,
-            self.polygon_mapping_file,
-            self.zone_polygons_overview_file,
-            self.additional_polygons_overview_file,
-        ]:
-            if fn is not None:
-                store_functions.append(
-                    (
-                        read_csv,
-                        [
-                            {"csv_file": fn},
-                        ],
-                    )
-                )
+
+        if self.polygon_mapping_file is not None:
+            store_functions.append(
+                (get_path, [{"path": Path(self.polygon_mapping_file)}])
+            )
+
+            for fn in self.polygon_paths:
+                store_functions.append((get_path, [{"path": Path(fn)}]))
+
+        store_functions.append(
+            (read_csv, [{"csv_file": Path(self.surface_metadata_file)}])
+        )
+        if self.surface_scaling_file is not None:
+            store_functions.append(
+                (get_path, [{"path": Path(self.surface_scaling_file)}])
+            )
+
         if self.colormap_data is not None:
             store_functions.append(
                 (find_files, [{"folder": self.colormap_data, "suffix": ".csv"}])
@@ -274,24 +264,14 @@ class SurfaceViewer4D(WebvizPluginABC):
             )
 
         if self.polygon_data is not None:
-            for fn in list(self.zone_polygones_overview["file_name"]):
-                store_functions.append((get_path, [{"path": Path(fn)}]))
-
-            store_functions.append(
-                (get_path, [{"path": fn} for fn in self.zone_layers_files])
-            )
-
-            for fn in list(self.additional_polygones_overview["file_name"]):
-                store_functions.append((get_path, [{"path": Path(fn)}]))
-
-            store_functions.append(
-                (get_path, [{"path": fn} for fn in self.additional_layers_files])
-            )
-
-            if self.polygon_mapping_file is not None:
-                store_functions.append(
-                    (get_path, [{"path": Path(self.polygon_mapping_file)}])
+            for key in self.additional_polygon_layers.keys():
+                tagname = self.additional_polygon_layers.get(key).get("tagname")
+                file_format = self.additional_polygon_layers.get(key).get("format")
+                file_name = os.path.join(
+                    self.polygon_data,
+                    tagname + "." + file_format,
                 )
+                store_functions.append((get_path, [{"path": Path(file_name)}]))
 
         if self.selector_file is not None:
             store_functions.append((get_path, [{"path": self.selector_file}]))
@@ -335,11 +315,11 @@ class SurfaceViewer4D(WebvizPluginABC):
 
     def iterations(self, map_number):
         map_type = self.map_defaults[map_number]["map_type"]
-        return self.selection_list[map_type]["iteration"]
+        return self.selection_dict[map_type]["iteration"]
 
     def realizations(self, map_number):
         map_type = self.map_defaults[map_number]["map_type"]
-        return self.selection_list[map_type]["realization"]
+        return self.selection_dict[map_type]["realization"]
 
     @property
     def layout(self):
@@ -466,6 +446,8 @@ class SurfaceViewer4D(WebvizPluginABC):
         return min_max
 
     def make_map(self, data, iteration, real, attribute_settings, map_idx):
+        self.realization = real
+        self.iteration = iteration
         data = json.loads(data)
         selected_zone = data.get("name")
         map_type = self.map_defaults[map_idx]["map_type"]
@@ -493,22 +475,24 @@ class SurfaceViewer4D(WebvizPluginABC):
                 )
             ]
 
-            # Check if there are polygon layers available for the selected zone
-            for tagname in self.zone_polygon_tagnames:
-                polygon_name = get_polygon_name(
-                    self.polygon_mapping, selected_zone, tagname
-                )
+            # Check if there are polygons available for the selected zone
+            if self.zone_polygon_layers and len(self.zone_polygon_layers) > 0:
+                for index, zone_polygon in enumerate(self.zone_polygon_layers):
+                    layer = self.create_polygon_layer(
+                        zone_polygon, "zone", selected_zone
+                    )
 
-                layer = get_polygon_layer(
-                    self.zone_polygon_layers, polygon_name, tagname
-                )
+                    if len(layer) == 0:
+                        layer = self.default_polygon_layers[index]
 
-                if layer is not None:
                     surface_layers.append(layer)
 
             # Add additional polygon layers (if existing)
-            if self.additional_polygon_layers:
-                for layer in self.additional_polygon_layers:
+            if (
+                self.additional_polygon_layers
+                and len(self.additional_polygon_layers) > 0
+            ):
+                for layer in self.additional_layers:
                     surface_layers.append(layer)
 
             if self.basic_well_layers:
@@ -517,7 +501,7 @@ class SurfaceViewer4D(WebvizPluginABC):
 
             interval = data["date"]
 
-            # Load new interval layers if selected interval has changed (or has not been set)
+            # Load new interval well layers if selected interval has changed (or has not been set)
             if interval != self.selected_intervals[map_idx]:
                 if get_dates(interval)[0] <= self.last_observed_date:
                     index = self.interval_names.index(interval)
@@ -630,37 +614,102 @@ class SurfaceViewer4D(WebvizPluginABC):
         print("Reading polygon mapping from", mapping_file)
 
         if os.path.exists(get_path(mapping_file)):
-            polygon_mapping = read_csv(mapping_file)
+            polygon_mapping = pd.read_csv(get_path(mapping_file))
         else:
             polygon_mapping = pd.DataFrame()
+            print("WARNING: Polygon mapping file not found", self.polygon_mapping_file)
 
         return polygon_mapping
 
-    def load_zone_polygons(self, csv_files, settings):
-        polygon_layers = []
+    def load_surface_scaling(self, surface_scaling_file):
+        print("Reading surface scaling from", surface_scaling_file)
 
-        for csv_file in csv_files:
-            polygon_df = pd.read_csv(get_path(csv_file))
-            polygon_info = get_polygon_info(
-                csv_file, self.zone_polygones_overview, settings
+        if os.path.exists(get_path(surface_scaling_file)):
+            polygon_mapping = pd.read_csv(get_path(surface_scaling_file))
+        else:
+            polygon_mapping = pd.DataFrame()
+            print("WARNING: Surface scaling file not found", self.surface_scaling_file)
+
+        return polygon_mapping
+
+    def create_polygon_layer(self, polygon, polygon_type, zone_name):
+        """Create a polygon layer which can either be a zone polygon or an additional polygon
+        Two types of polygons are supported:
+        - zone polygons (from the fmu execution)
+        - additional polygons (e.g. prm lines, shadow areas, ...)"""
+        layer = {}
+
+        if polygon_type == "additional":
+            tagname = self.additional_polygon_layers.get(polygon).get("tagname")
+            label = self.additional_polygon_layers.get(polygon).get("label")
+            format = self.additional_polygon_layers.get(polygon).get("format")
+            tooltip = tagname
+
+            polygon_file = os.path.join(
+                self.polygon_data,
+                tagname + "." + format,
             )
-            polygon_layer = make_polyline_layer(polygon_df, polygon_info)
-            polygon_layers.append(polygon_layer)
+            self.polygon_paths.append(polygon_file)
 
-        return polygon_layers
+        elif polygon_type == "zone":
+            tagname = self.zone_polygon_layers.get(polygon).get("tagname")
+            label = self.zone_polygon_layers.get(polygon).get("label")
+            format = self.zone_polygon_layers.get(polygon).get("format")
 
-    def load_additional_polygons(self, csv_files, settings):
-        polygon_layers = []
+            # Default polygons
+            if self.realization == "---":
+                self.realization = self.top_reservoir.get("realization")
 
-        for csv_file in csv_files:
-            polygon_df = pd.read_csv(get_path(csv_file))
-            polygon_info = get_polygon_info(
-                csv_file, self.additional_polygones_overview, settings
+            if self.iteration == "---":
+                self.iteration = self.top_reservoir.get("iteration")
+
+            polygons_folder = os.path.join(
+                self.fmu_directory,
+                self.realization,
+                self.iteration,
+                self.top_reservoir.get("directory"),
+                self.top_reservoir.get("polygons_directory"),
             )
-            polygon_layer = make_polyline_layer(polygon_df, polygon_info)
-            polygon_layers.append(polygon_layer)
 
-        return polygon_layers
+            if not os.path.exists(polygons_folder):
+                # If the polygon file doesn't exist, use the default realization
+                polygons_folder = os.path.join(
+                    self.fmu_directory,
+                    self.top_reservoir.get("realization"),
+                    self.top_reservoir.get("iteration"),
+                    self.top_reservoir.get("directory"),
+                    self.top_reservoir.get("polygons_directory"),
+                )
+
+            if not self.polygon_mapping.empty:
+                name = get_polygon_name(self.polygon_mapping, zone_name, tagname)
+            else:
+                name = self.top_reservoir.get("polygon_name")
+
+            tooltip = name + "-" + tagname
+
+            polygon_file = name + "--" + tagname + "." + format
+            polygon_file = os.path.join(polygons_folder, polygon_file)
+
+        print("Reading polygon file:", polygon_file)
+        if os.path.exists(get_path(Path(polygon_file))):
+            polygon_df = pd.read_csv(get_path(Path(polygon_file)))
+            color = get_color(self.settings, "polygon", polygon)
+
+            if len(polygon_df) > 0 and "ID" in polygon_df.columns:
+                layer = make_polyline_layer(
+                    polygon_df,
+                    format,
+                    tagname,
+                    label,
+                    tooltip,
+                    color,
+                )
+            else:
+                print("WARNING: layer not created")
+                layer = None
+
+        return layer
 
     def set_callbacks(self, app):
         set_first_map(parent=self, app=app)
