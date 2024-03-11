@@ -147,9 +147,8 @@ class SurfaceViewer4D(WebvizPluginABC):
             load_custom_colormaps(self.colormap_files)
 
         # Read attribute maps settings (min-/max-values)
-        self.colormap_settings = None
         self.surface_scaling_file = surface_scaling_file
-        self.surface_scaling = self.load_surface_scaling(self.surface_scaling_file)
+        self.colormap_settings = self.load_surface_scaling(self.surface_scaling_file)
 
         # Read settings
         config_dir = os.path.dirname(os.path.abspath(self.selector_file))
@@ -625,12 +624,12 @@ class SurfaceViewer4D(WebvizPluginABC):
         print("Reading surface scaling from", surface_scaling_file)
 
         if os.path.exists(get_path(surface_scaling_file)):
-            polygon_mapping = pd.read_csv(get_path(surface_scaling_file))
+            surface_scaling = pd.read_csv(get_path(surface_scaling_file))
         else:
-            polygon_mapping = pd.DataFrame()
+            surface_scaling = pd.DataFrame()
             print("WARNING: Surface scaling file not found", self.surface_scaling_file)
 
-        return polygon_mapping
+        return surface_scaling
 
     def create_polygon_layer(self, polygon, polygon_type, zone_name):
         """Create a polygon layer which can either be a zone polygon or an additional polygon
@@ -691,7 +690,6 @@ class SurfaceViewer4D(WebvizPluginABC):
             polygon_file = name + "--" + tagname + "." + format
             polygon_file = os.path.join(polygons_folder, polygon_file)
 
-        print("Reading polygon file:", polygon_file)
         if os.path.exists(get_path(Path(polygon_file))):
             polygon_df = pd.read_csv(get_path(Path(polygon_file)))
             color = get_color(self.settings, "polygon", polygon)
