@@ -25,6 +25,7 @@ from webviz_4d._datainput._polygons import (
     make_polyline_layer,
     get_polygon_name,
     get_polygon_files,
+    get_default_polygon_files,
 )
 from webviz_4d._datainput._metadata import define_map_defaults
 from ._webvizstore import read_csv, read_csvs, find_files, get_path
@@ -120,6 +121,15 @@ class SurfaceViewer4D(WebvizPluginABC):
         else:
             print("WARNING: Polygon mapping not supplied")
             self.polygon_mapping = pd.DataFrame()
+
+        # Get path to default polygon files in case of no realizations
+        default_polygon_files = get_default_polygon_files(
+            self.fmu_directory,
+            self.top_reservoir.get("directory"),
+            self.top_reservoir.get("polygons_directory"),
+        )
+
+        self.polygon_paths = self.polygon_paths + default_polygon_files
 
         # Read production data
         self.prod_names = ["BORE_OIL_VOL.csv", "BORE_GI_VOL.csv", "BORE_WI_VOL.csv"]
@@ -674,8 +684,8 @@ class SurfaceViewer4D(WebvizPluginABC):
                 # If the polygon file doesn't exist, use the default realization
                 polygons_folder = os.path.join(
                     self.fmu_directory,
-                    self.top_reservoir.get("realization"),
-                    self.top_reservoir.get("iteration"),
+                    # self.top_reservoir.get("realization"),
+                    # self.top_reservoir.get("iteration"),
                     self.top_reservoir.get("directory"),
                     self.top_reservoir.get("polygons_directory"),
                 )
@@ -692,6 +702,11 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         if os.path.exists(get_path(Path(polygon_file))):
             polygon_df = pd.read_csv(get_path(Path(polygon_file)))
+
+            if "REAL" in polygon_df.columns:
+                selected_df = polygon_df[polygon_df["REAL"] == 0]
+                polygon_df = selected_df.copy()
+
             color = get_color(self.settings, "polygon", polygon)
 
             if len(polygon_df) > 0 and "ID" in polygon_df.columns:
