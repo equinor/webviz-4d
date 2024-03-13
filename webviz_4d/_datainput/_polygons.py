@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import json
+import glob
 
 
 default_colors = {
@@ -203,3 +204,15 @@ def get_polygon_files(polygon_mapping, selection_list, directory, fmu_dir):
                         paths.append(path)
 
     return paths
+
+
+def get_default_polygon_files(fmu_dir, directory, polygons_directory):
+    polygons_folder = os.path.join(
+        fmu_dir,
+        directory,
+        polygons_directory,
+    )
+
+    default_polygon_files = glob.glob(os.path.join(polygons_folder, "*"))
+
+    return default_polygon_files

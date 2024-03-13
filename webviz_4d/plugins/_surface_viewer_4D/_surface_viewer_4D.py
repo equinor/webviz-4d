@@ -25,6 +25,7 @@ from webviz_4d._datainput._polygons import (
     make_polyline_layer,
     get_polygon_name,
     get_polygon_files,
+    get_default_polygon_files,
 )
 from webviz_4d._datainput._metadata import define_map_defaults
 from ._webvizstore import read_csv, read_csvs, find_files, get_path
@@ -121,6 +122,15 @@ class SurfaceViewer4D(WebvizPluginABC):
             print("WARNING: Polygon mapping not supplied")
             self.polygon_mapping = pd.DataFrame()
 
+        # Get path to default polygon files in case of no realizations
+        default_polygon_files = get_default_polygon_files(
+            self.fmu_directory,
+            self.top_reservoir.get("directory"),
+            self.top_reservoir.get("polygons_directory"),
+        )
+
+        self.polygon_paths = self.polygon_paths + default_polygon_files
+
         # Read production data
         self.prod_names = ["BORE_OIL_VOL.csv", "BORE_GI_VOL.csv", "BORE_WI_VOL.csv"]
         self.prod_folder = production_data
@@ -147,9 +157,8 @@ class SurfaceViewer4D(WebvizPluginABC):
             load_custom_colormaps(self.colormap_files)
 
         # Read attribute maps settings (min-/max-values)
-        self.colormap_settings = None
         self.surface_scaling_file = surface_scaling_file
-        self.surface_scaling = self.load_surface_scaling(self.surface_scaling_file)
+        self.colormap_settings = self.load_surface_scaling(self.surface_scaling_file)
 
         # Read settings
         config_dir = os.path.dirname(os.path.abspath(self.selector_file))
@@ -625,12 +634,12 @@ class SurfaceViewer4D(WebvizPluginABC):
         print("Reading surface scaling from", surface_scaling_file)
 
         if os.path.exists(get_path(surface_scaling_file)):
-            polygon_mapping = pd.read_csv(get_path(surface_scaling_file))
+            surface_scaling = pd.read_csv(get_path(surface_scaling_file))
         else:
-            polygon_mapping = pd.DataFrame()
+            surface_scaling = pd.DataFrame()
             print("WARNING: Surface scaling file not found", self.surface_scaling_file)
 
-        return polygon_mapping
+        return surface_scaling
 
     def create_polygon_layer(self, polygon, polygon_type, zone_name):
         """Create a polygon layer which can either be a zone polygon or an additional polygon
@@ -675,8 +684,8 @@ class SurfaceViewer4D(WebvizPluginABC):
                 # If the polygon file doesn't exist, use the default realization
                 polygons_folder = os.path.join(
                     self.fmu_directory,
-                    self.top_reservoir.get("realization"),
-                    self.top_reservoir.get("iteration"),
+                    # self.top_reservoir.get("realization"),
+                    # self.top_reservoir.get("iteration"),
                     self.top_reservoir.get("directory"),
                     self.top_reservoir.get("polygons_directory"),
                 )
@@ -691,9 +700,13 @@ class SurfaceViewer4D(WebvizPluginABC):
             polygon_file = name + "--" + tagname + "." + format
             polygon_file = os.path.join(polygons_folder, polygon_file)
 
-        print("Reading polygon file:", polygon_file)
         if os.path.exists(get_path(Path(polygon_file))):
             polygon_df = pd.read_csv(get_path(Path(polygon_file)))
+
+            if "REAL" in polygon_df.columns:
+                selected_df = polygon_df[polygon_df["REAL"] == 0]
+                polygon_df = selected_df.copy()
+
             color = get_color(self.settings, "polygon", polygon)
 
             if len(polygon_df) > 0 and "ID" in polygon_df.columns:
