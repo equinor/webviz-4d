@@ -232,10 +232,6 @@ def get_default_polygon_files(fmu_dir, top_reservoir):
     )
 
     polygon_files = glob.glob(os.path.join(polygons_folder, "*"))
-
     default_polygon_files = default_polygon_files + polygon_files
-
-    if len(default_polygon_files) == 0:
-        print("*** ERROR: Default polygons not found ***")
 
     return default_polygon_files
