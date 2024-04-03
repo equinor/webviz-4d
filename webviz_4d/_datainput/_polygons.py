@@ -206,13 +206,36 @@ def get_polygon_files(polygon_mapping, selection_list, directory, fmu_dir):
     return paths
 
 
-def get_default_polygon_files(fmu_dir, directory, polygons_directory):
+def get_default_polygon_files(fmu_dir, top_reservoir):
+    directory = top_reservoir.get("directory")
+    polygons_directory = top_reservoir.get("polygons_directory")
+
+    default_iteration = top_reservoir.get("iteration")
+    default_realization = top_reservoir.get("realization")
+
+    # Default polygons for realizations and iterations
+    polygons_folder = os.path.join(
+        fmu_dir,
+        default_realization,
+        default_iteration,
+        directory,
+        polygons_directory,
+    )
+
+    default_polygon_files = glob.glob(os.path.join(polygons_folder, "*"))
+
+    # Default polygons if only aggregated data
     polygons_folder = os.path.join(
         fmu_dir,
         directory,
         polygons_directory,
     )
 
-    default_polygon_files = glob.glob(os.path.join(polygons_folder, "*"))
+    polygon_files = glob.glob(os.path.join(polygons_folder, "*"))
+
+    default_polygon_files = default_polygon_files + polygon_files
+
+    if len(default_polygon_files) == 0:
+        print("*** ERROR: Default polygons not found ***")
 
     return default_polygon_files
