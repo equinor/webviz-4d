@@ -43,7 +43,7 @@ def has_header(df):
     return status
 
 
-def create_polygon_layer(polygon_df):
+def convert_polygon_layer(polygon_df):
     """Create polygon layer"""
     all_positions = []
     positions = []
@@ -109,27 +109,45 @@ def get_polygon_name(mapping, zone, polygon_type):
     return polygon_name
 
 
-def make_polyline_layer(polygon_df, format, tagname, label, tooltip, color):
+def make_polyline_layer(
+    polygon_type, polygon_df, format, tagname, label, tooltip, color
+):
     """Make layeredmap fault layer"""
     data = []
-    dataframe = create_polygon_layer(polygon_df)
-
-    if dataframe.empty:
-        print("WARNING: empty dataframe as input to make_polyline_layer")
-        return None
 
     if color == None:
         color = default_colors.get(tagname)
 
-    if format == "csv":
-        for _index, row in dataframe.iterrows():
-            if "tooltip" in dataframe.columns:
-                tooltip = row["tooltip"]
+    if polygon_type == "zone":
+        dataframe = convert_polygon_layer(polygon_df)
 
-            polyline_data = get_polyline(row, tooltip, color)
+        if dataframe.empty:
+            print("WARNING: empty dataframe as input to make_polyline_layer")
+            return None
 
-            if polyline_data:
-                data.append(polyline_data)
+        if format == "csv":
+            for _index, row in dataframe.iterrows():
+                if "tooltip" in dataframe.columns:
+                    tooltip = row["tooltip"]
+
+                polyline_data = get_polyline(row, tooltip, color)
+
+                if polyline_data:
+                    data.append(polyline_data)
+        else:
+            print("ERROR unknown format:", format)
+    elif polygon_type == "additional":
+        dataframe = polygon_df.copy()
+
+        if format == "csv":
+            for _index, row in dataframe.iterrows():
+                if "year" in dataframe.columns:
+                    tooltip = "Line " + str(row["line"]) + " (" + str(row["year"]) + ")"
+
+                polyline_data = get_polyline(row, tooltip, color)
+
+                if polyline_data:
+                    data.append(polyline_data)
     else:
         print("ERROR unknown format:", format)
 
@@ -152,7 +170,12 @@ def get_polyline(layer, tooltip, color):
     if color is None:
         color = "black"
 
-    positions = layer["coordinates"]
+    positions_txt = layer["coordinates"]
+
+    if isinstance(positions_txt, str):
+        positions = json.loads(positions_txt)
+    else:
+        positions = positions_txt
 
     if positions:
         return {
