@@ -25,6 +25,7 @@ setup(
         ]
     },
     install_requires=[
+        "webviz-config>=0.0.24",
         "webviz-subsurface-components==0.4.15",
     ],
     tests_require=TESTS_REQUIRE,
