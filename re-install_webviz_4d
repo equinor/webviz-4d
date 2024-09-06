@@ -5,20 +5,19 @@ if [ -d "venv" ]; then
     rm -rf venv 
 fi
 
+source /prog/res/komodo/2024.06.10-py311/enable
+
 python -m venv venv
 source ./venv/bin/activate
 
 echo "Installing all necessary packages ..."
 
 pip install --upgrade pip
-pip install urllib3==1.26.15
 pip install -r requirements.txt
-pip install webviz-config
-pip install webviz-config-equinor
 pip install black
 pip install pylint
 pip install pytest
 pip install -e .
 
-echo "WebViz-4D installation completed"
+echo "WebViz-4D installation completed, virtual environment: venv"
 

@@ -1,2 +1,4 @@
-webviz-subsurface-components==0.4.15
 matplotlib==3.8.2
+dash==2.17.1
+webviz-subsurface-components==0.4.15
+webviz-config-equinor==0.2.5
