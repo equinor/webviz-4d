@@ -188,7 +188,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.default_polygon_layers = []
         self.zone_polygon_tagnames = []
         self.zone_polygon_layers = []
-        self.additional_polygon_layers = []
+        self.additional_polygons = []
 
         self.zone_polygon_layers = self.shared_settings.get("zone_polygon_layers")
 
@@ -202,15 +202,12 @@ class SurfaceViewer4D(WebvizPluginABC):
                     layer = self.create_polygon_layer(zone_polygon, "zone", zone_name)
                     self.default_polygon_layers.append(layer)
 
-        # Create additional polygon layers
-        self.additional_polygon_layers = self.shared_settings.get(
-            "additional_polygon_layers"
-        )
-
+        # Create additional polygon layers (read )
+        self.additional_polygons = self.shared_settings.get("additional_polygon_layers")
         self.additional_layers = []
 
-        if self.additional_polygon_layers and len(self.additional_polygon_layers) > 0:
-            for additional_polygon in self.additional_polygon_layers:
+        if self.additional_polygons and len(self.additional_polygons) > 0:
+            for additional_polygon in self.additional_polygons:
                 layer = self.create_polygon_layer(
                     additional_polygon, "additional", None
                 )
@@ -272,11 +269,12 @@ class SurfaceViewer4D(WebvizPluginABC):
             )
 
         if self.polygon_data is not None:
-            for key in self.additional_polygon_layers.keys():
-                tagname = self.additional_polygon_layers.get(key).get("tagname")
-                file_format = self.additional_polygon_layers.get(key).get("format")
+            for key in self.additional_polygons.keys():
+                tagname = self.additional_polygons.get(key).get("tagname")
+                file_format = self.additional_polygons.get(key).get("format")
                 file_name = os.path.join(
                     self.polygon_data,
+                    "additional_layers",
                     tagname + "." + file_format,
                 )
                 store_functions.append((get_path, [{"path": Path(file_name)}]))
@@ -496,10 +494,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                     surface_layers.append(layer)
 
             # Add additional polygon layers (if existing)
-            if (
-                self.additional_polygon_layers
-                and len(self.additional_polygon_layers) > 0
-            ):
+            if self.additional_layers and len(self.additional_layers) > 0:
                 for layer in self.additional_layers:
                     surface_layers.append(layer)
 
@@ -645,19 +640,33 @@ class SurfaceViewer4D(WebvizPluginABC):
         Two types of polygons are supported:
         - zone polygons (from the fmu execution)
         - additional polygons (e.g. prm lines, shadow areas, ...)"""
-        layer = {}
+        layer = []
+        color = None
 
         if polygon_type == "additional":
-            tagname = self.additional_polygon_layers.get(polygon).get("tagname")
-            label = self.additional_polygon_layers.get(polygon).get("label")
-            format = self.additional_polygon_layers.get(polygon).get("format")
+            tagname = self.additional_polygons.get(polygon).get("tagname")
+            label = self.additional_polygons.get(polygon).get("label")
+            format = self.additional_polygons.get(polygon).get("format")
             tooltip = tagname
+            polygon_colors = self.settings.get("polygon_colors")
+
+            if polygon_colors:
+                color = polygon_colors.get(tagname)
 
             polygon_file = os.path.join(
                 self.polygon_data,
+                "additional_layers",
                 tagname + "." + format,
             )
+
+            print("Reading polygon file:", polygon_file)
+
             self.polygon_paths.append(polygon_file)
+            polygon_df = pd.read_csv(get_path(Path(polygon_file)))
+
+            layer = make_polyline_layer(
+                polygon_type, polygon_df, format, tagname, label, tooltip, color
+            )
 
         elif polygon_type == "zone":
             tagname = self.zone_polygon_layers.get(polygon).get("tagname")
@@ -711,10 +720,12 @@ class SurfaceViewer4D(WebvizPluginABC):
                         selected_df = polygon_df[polygon_df["REAL"] == 0]
                         polygon_df = selected_df.copy()
 
+                    polygon_type = "zone"
                     color = get_color(self.settings, "polygon", polygon)
 
                     if len(polygon_df) > 0 and "ID" in polygon_df.columns:
                         layer = make_polyline_layer(
+                            polygon_type,
                             polygon_df,
                             format,
                             tagname,
