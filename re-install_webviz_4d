@@ -1,14 +1,22 @@
 #!/bin/bash 
 #set -x
 
-if [ -d "venv" ]; then 
-    rm -rf venv 
+red_hat="$(lsb_release -r)" 
+echo "Red Hat: $red_hat"
+
+if [ "$red_hat" = "Release:	8.10" ]; then
+    source /prog/res/komodo/2024.06.10-py311/enable
+    venv_dir="venv"
+else
+    venv_dir="venv38"
 fi
 
-source /prog/res/komodo/2024.06.10-py311/enable
+if [ -d "$venv_dir" ]; then 
+    rm -rf "$venv_dir"
+fi
 
-python -m venv venv
-source ./venv/bin/activate
+python -m venv "$venv_dir"
+source ./"$venv_dir"/bin/activate
 
 echo "Installing all necessary packages ..."
 
@@ -19,5 +27,5 @@ pip install pylint
 pip install pytest
 pip install -e .
 
-echo "WebViz-4D installation completed, virtual environment: venv"
+echo "WebViz-4D installation completed, virtual environment: $venv_dir"
 
