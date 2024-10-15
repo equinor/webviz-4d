@@ -206,15 +206,15 @@ def get_map_min_max(surface, attribute_settings, data):
 
 
 def get_realization_status(realizations):
-    # Check if the configuration contains realizations or only aggregations
-    status = None
+    # Check if the configuration contains only realizations, only aggregations
+    # or both
+    status = []
 
     for realization in realizations:
         if "realization" in realization:
-            status = "realizations"
-            break
-        elif "p50" in realizations:
-            status = "aggregations"
-            break
+            status.append("realizations")
+
+        if "p50" in realizations:
+            status.append("aggregations")
 
     return status
