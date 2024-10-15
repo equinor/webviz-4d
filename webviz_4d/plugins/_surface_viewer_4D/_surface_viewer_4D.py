@@ -14,7 +14,6 @@ from webviz_4d._datainput.common import (
     get_dates,
     get_last_date,
     get_map_min_max,
-    get_realization_status,
 )
 from webviz_4d._datainput.well import load_all_wells
 from webviz_4d._datainput._production import make_new_well_layer
@@ -189,6 +188,7 @@ class SurfaceViewer4D(WebvizPluginABC):
         self.zone_polygon_tagnames = []
         self.zone_polygon_layers = []
         self.additional_polygons = []
+        self.surface_type = None
 
         self.zone_polygon_layers = self.shared_settings.get("zone_polygon_layers")
 
@@ -459,6 +459,13 @@ class SurfaceViewer4D(WebvizPluginABC):
         map_type = self.map_defaults[map_idx]["map_type"]
         surface_file = self.get_real_runpath(data, iteration, real, map_type)
 
+        if "realization" in real:
+            self.surface_type = "realization"
+        elif "---" in real:
+            self.surface_type = "observation"
+        else:
+            self.surface_type = "aggregation"
+
         if os.path.isfile(surface_file):
             surface = load_surface(surface_file)
             attribute_settings = json.loads(attribute_settings)
@@ -481,14 +488,14 @@ class SurfaceViewer4D(WebvizPluginABC):
                 )
             ]
 
-            # Check if there are polygons available for the selected zone
+            # Check if there are polygons available for the new map
             if self.zone_polygon_layers and len(self.zone_polygon_layers) > 0:
                 for index, zone_polygon in enumerate(self.zone_polygon_layers):
                     layer = self.create_polygon_layer(
                         zone_polygon, "zone", selected_zone
                     )
 
-                    if len(layer) == 0:
+                    if len(layer) == 0:  # Specific polygon not found, use default
                         layer = self.default_polygon_layers[index]
 
                     surface_layers.append(layer)
@@ -672,18 +679,11 @@ class SurfaceViewer4D(WebvizPluginABC):
             tagname = self.zone_polygon_layers.get(polygon).get("tagname")
             label = self.zone_polygon_layers.get(polygon).get("label")
             format = self.zone_polygon_layers.get(polygon).get("format")
-            simulated_maps = self.selection_dict.get("simulated")
-            realizations = simulated_maps.get("realization")
-            realization_status = get_realization_status(realizations)
 
-            # Default polygons
-            if self.realization == "---":
-                self.realization = self.top_reservoir.get("realization")
+            if self.surface_type is None:
+                self.surface_type = "observation"
 
-            if self.iteration == "---":
-                self.iteration = self.top_reservoir.get("iteration")
-
-            if realization_status == "realizations":
+            if self.surface_type == "realization":
                 polygons_folder = os.path.join(
                     self.fmu_directory,
                     self.realization,
@@ -691,16 +691,13 @@ class SurfaceViewer4D(WebvizPluginABC):
                     self.top_reservoir.get("directory"),
                     self.top_reservoir.get("polygons_directory"),
                 )
-            elif realization_status == "aggregations":
+            else:
                 polygons_folder = os.path.join(
                     self.fmu_directory,
+                    self.top_reservoir.get("iteration"),
                     self.top_reservoir.get("directory"),
                     self.top_reservoir.get("polygons_directory"),
                 )
-            else:
-                print("WARNING: No zone polygons found")
-                polygons_folder = None
-                layer = []
 
             if polygons_folder is not None:
                 if not self.polygon_mapping.empty:

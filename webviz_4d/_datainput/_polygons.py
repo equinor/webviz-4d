@@ -196,7 +196,7 @@ def get_polygon_files(polygon_mapping, selection_list, directory, fmu_dir):
     polygon_overview = {}
     paths = []
 
-    # Create polygon overview
+    # Create overview of polygon files  - both for single realizations and aggregations
     polygon_types = polygon_mapping.columns[1:]
 
     for polygon_type in polygon_types:
@@ -206,6 +206,8 @@ def get_polygon_files(polygon_mapping, selection_list, directory, fmu_dir):
 
     realizations = selection_list.get("simulated").get("realization")
     iterations = selection_list.get("simulated").get("iteration")
+
+    # realization polygones
 
     for realization in realizations:
         if "realization" in realization:
@@ -225,6 +227,24 @@ def get_polygon_files(polygon_mapping, selection_list, directory, fmu_dir):
                         )
 
                         paths.append(path)
+
+    # aggregation polygons
+
+    for iteration in iterations:
+        for polygon_type in polygon_overview.keys():
+            surfaces = polygon_overview.get(polygon_type)
+
+            for surface in surfaces:
+                file_name = surface + "--" + polygon_type + ".csv"
+                path = os.path.join(
+                    fmu_dir,
+                    iteration,
+                    directory,
+                    "polygons",
+                    file_name,
+                )
+
+                paths.append(path)
 
     return paths
 
