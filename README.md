@@ -33,3 +33,8 @@ bandit -r webviz_4d  # Check Python security best practice
 
 For general usage, see the documentation on
 [webviz-config](https://github.com/equinor/webviz-config).
+
+
+### Contributing
+
+This project is now in run & maintance mode, but feedback will still be appreciated in the form a Issue report.
