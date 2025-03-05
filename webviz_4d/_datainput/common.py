@@ -1,4 +1,4 @@
-""" Collection of some functions used by the 4D viewer or data preparation scripts """
+"""Collection of some functions used by the 4D viewer or data preparation scripts"""
 
 import io
 import numpy as np

@@ -419,15 +419,6 @@ class SurfaceViewer4D(WebvizPluginABC):
 
         if self.colormap_settings is not None:
             interval = data["date"]
-            interval = (
-                interval[0:4]
-                + interval[5:7]
-                + interval[8:10]
-                + "_"
-                + interval[11:15]
-                + interval[16:18]
-                + interval[19:21]
-            )
 
             zone = data.get("name")
 
@@ -438,16 +429,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                 & (colormap_settings["data.name"] == zone)
             ]
 
-            if "std" in realization:
-                settings = selected_data[selected_data["realization"] == "std"]
-            elif map_type == "observed":
-                settings = selected_data[selected_data["realization"] == realization]
-            else:
-                settings = selected_data[
-                    selected_data["realization"] == "realization-0"
-                ]
-
-            min_max = settings[["lower_limit", "upper_limit"]]
+            min_max = selected_data[["lower_limit", "upper_limit"]]
 
         return min_max
 
@@ -680,24 +662,62 @@ class SurfaceViewer4D(WebvizPluginABC):
             label = self.zone_polygon_layers.get(polygon).get("label")
             format = self.zone_polygon_layers.get(polygon).get("format")
 
+            polygon_realization = self.zone_polygon_layers.get(polygon).get(
+                "realization"
+            )
+            polygon_iteration = self.zone_polygon_layers.get(polygon).get("iteration")
+
+            case_polygon_directory = self.zone_polygon_layers.get(polygon).get(
+                "case_polygon_directory"
+            )
+
             if self.surface_type is None:
                 self.surface_type = "observation"
 
             if self.surface_type == "realization":
-                polygons_folder = os.path.join(
-                    self.fmu_directory,
-                    self.realization,
-                    self.iteration,
-                    self.top_reservoir.get("directory"),
-                    self.top_reservoir.get("polygons_directory"),
-                )
+                if (
+                    case_polygon_directory is not None
+                ):  # Use default iteration (case polygon)
+                    polygons_folder = os.path.join(
+                        self.fmu_directory,
+                        case_polygon_directory,
+                    )
+                elif (
+                    polygon_realization is None and polygon_iteration is None
+                ):  # Use actual iteration and realization for selected realizations
+                    polygons_folder = os.path.join(
+                        self.fmu_directory,
+                        self.realization,
+                        self.iteration,
+                        self.top_reservoir.get("directory"),
+                        self.top_reservoir.get("polygons_directory"),
+                    )
+                elif (
+                    polygon_realization and polygon_iteration
+                ):  # Use configured iteration and realization
+                    polygons_folder = os.path.join(
+                        self.fmu_directory,
+                        self.top_reservoir.get("realization"),
+                        self.top_reservoir.get("iteration"),
+                        self.top_reservoir.get("directory"),
+                        self.top_reservoir.get("polygons_directory"),
+                    )
             else:
-                polygons_folder = os.path.join(
-                    self.fmu_directory,
-                    self.top_reservoir.get("iteration"),
-                    self.top_reservoir.get("directory"),
-                    self.top_reservoir.get("polygons_directory"),
-                )
+                if (
+                    polygon_realization and polygon_iteration
+                ):  # Use configured iteration and realization
+                    polygons_folder = os.path.join(
+                        self.fmu_directory,
+                        polygon_realization,
+                        polygon_iteration,
+                        self.top_reservoir.get("directory"),
+                        self.top_reservoir.get("polygons_directory"),
+                    )
+                else:  # Use default iteration (case polygon)
+                    polygons_folder = os.path.join(
+                        self.fmu_directory,
+                        case_polygon_directory,
+                    )
 
             if polygons_folder is not None:
                 if not self.polygon_mapping.empty:
@@ -730,9 +750,9 @@ class SurfaceViewer4D(WebvizPluginABC):
                             tooltip,
                             color,
                         )
-                    else:
-                        print("WARNING: layer not created")
-                        layer = None
+                else:
+                    print("WARNING: layer not created")
+                    layer = None
 
         return layer
 
