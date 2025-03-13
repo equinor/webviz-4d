@@ -231,9 +231,9 @@ class SurfaceViewer4D(WebvizPluginABC):
             self.create_well_layers()
 
         # Create selectors (attributes, names and dates) for all 3 maps
-        self.selector = SurfaceSelector(app, self.selection_dict, self.map_defaults[0])
-        self.selector2 = SurfaceSelector(app, self.selection_dict, self.map_defaults[1])
-        self.selector3 = SurfaceSelector(app, self.selection_dict, self.map_defaults[2])
+        self.selector = SurfaceSelector(app, self.surface_metadata, self.map_defaults[0])
+        self.selector2 = SurfaceSelector(app, self.surface_metadata, self.map_defaults[1])
+        self.selector3 = SurfaceSelector(app, self.surface_metadata, self.map_defaults[2])
         self.set_callbacks(app)
 
     def add_webvizstore(self) -> List[Tuple[Callable, list]]:
@@ -268,7 +268,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                 (get_path, [{"path": fn} for fn in self.colormap_files])
             )
 
-        if self.polygon_data is not None:
+        if self.polygon_data is not None and self.additional_polygons is not None:
             for key in self.additional_polygons.keys():
                 tagname = self.additional_polygons.get(key).get("tagname")
                 file_format = self.additional_polygons.get(key).get("format")
@@ -477,7 +477,7 @@ class SurfaceViewer4D(WebvizPluginABC):
                         zone_polygon, "zone", selected_zone
                     )
 
-                    if len(layer) == 0:  # Specific polygon not found, use default
+                    if layer is not None and len(layer) == 0:  # Specific polygon not found, use default
                         layer = self.default_polygon_layers[index]
 
                     surface_layers.append(layer)
