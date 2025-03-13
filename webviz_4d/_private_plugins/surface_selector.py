@@ -40,8 +40,8 @@ class SurfaceSelector:
             - somedate
             - somedate"""
 
-    def __init__(self, app, selections, map_defaults):
-        self.selections = selections
+    def __init__(self, app, surface_meta, map_defaults):
+        self.surface_meta = surface_meta
         self.map_defaults = map_defaults
         # self.intervals = intervals
         self.current_selections = map_defaults
@@ -70,16 +70,13 @@ class SurfaceSelector:
 
     @property
     def attrs(self):
-        map_type = self.map_defaults["map_type"]
-        return unique_values(self.selections[map_type]["attribute"])
+        return list(self.surface_meta["data.attribute"].unique())
 
-    def _names_in_attr(self):
-        map_type = self.map_defaults["map_type"]
-        return unique_values(self.selections[map_type]["name"])
+    def _names_in_attr(self,attribute):
+        return list(self.surface_meta[self.surface_meta["data.attribute"]==attribute]["data.name"].unique())
 
-    def _interval_in_attr(self):
-        map_type = self.map_defaults["map_type"]
-        return unique_values(self.selections[map_type]["interval"])
+    def _interval_in_attr(self,attribute):
+        return list(self.surface_meta[self.surface_meta["data.attribute"]==attribute]["interval"].unique())
 
     @property
     def attribute_selector(self):
@@ -234,7 +231,7 @@ class SurfaceSelector:
 
             if ctx is None:
                 raise PreventUpdate
-            names = self._names_in_attr()
+            names = self._names_in_attr(attr)
 
             if not names:
                 return None, None, {"visibility": "hidden"}
@@ -267,7 +264,7 @@ class SurfaceSelector:
 
             if ctx is None:
                 raise PreventUpdate
-            interval = self._interval_in_attr()
+            interval = self._interval_in_attr(attr)
 
             if not interval or not interval[0]:
                 return [], None, {"visibility": "hidden"}
@@ -299,9 +296,9 @@ class SurfaceSelector:
 
             # Preventing update if selections are not valid (waiting for the other callbacks)
 
-            if not name in self._names_in_attr():
+            if not name in self._names_in_attr(attr):
                 raise PreventUpdate
-            if date and not date in self._interval_in_attr():
+            if date and not date in self._interval_in_attr(attr):
                 raise PreventUpdate
 
             return json.dumps({"name": name, "attr": attr, "date": date})
