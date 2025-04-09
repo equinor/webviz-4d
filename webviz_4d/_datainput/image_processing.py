@@ -3,8 +3,11 @@ import base64
 import numpy as np
 from matplotlib import cm
 from PIL import Image
+import warnings
 
 from webviz_4d._datainput._colormaps import change_inferno
+
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
 def array_to_png(tensor, shift=True, colormap=False):
@@ -60,6 +63,7 @@ def array_to_png(tensor, shift=True, colormap=False):
             image = Image.fromarray(np.uint8(tensor), "RGB")
         elif tensor.shape[2] == 4:
             image = Image.fromarray(np.uint8(tensor), "RGBA")
+
         else:
             raise ValueError(
                 "Third dimension of tensor must have length 3 (RGB) or 4 (RGBA)"
