@@ -7,8 +7,6 @@ import warnings
 
 from webviz_4d._datainput._colormaps import change_inferno
 
-warnings.filterwarnings("ignore", category=RuntimeWarning)
-
 
 def array_to_png(tensor, shift=True, colormap=False):
     """The layered map dash component takes in pictures as base64 data
@@ -30,52 +28,58 @@ def array_to_png(tensor, shift=True, colormap=False):
        of the third dimension is three or four, respectively).
     """
 
-    tensor -= np.nanmin(tensor)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-    if shift:
-        tensor *= 254.0 / np.nanmax(tensor)
-        tensor += 1.0
-    else:
-        tensor *= 255.0 / np.nanmax(tensor)
+        tensor -= np.nanmin(tensor)
 
-    tensor[np.isnan(tensor)] = 0
-
-    if colormap:
-        if tensor.shape[0] != 1:
-            raise ValueError("The first dimension of a colormap tensor should be 1")
-        if tensor.shape[1] != 256:
-            raise ValueError("The second dimension of a colormap tensor should be 256")
-        if tensor.shape[2] not in [3, 4]:
-            raise ValueError(
-                "The third dimension of a colormap tensor should be either 3 or 4"
-            )
         if shift:
-            if tensor.shape[2] != 4:
-                raise ValueError(
-                    "Can not shift a colormap which is not utilizing alpha channel"
-                )
-            tensor[0][0][3] = 0.0  # Make first color channel transparent
-
-    if tensor.ndim == 2:
-        image = Image.fromarray(np.uint8(tensor), "L")
-    elif tensor.ndim == 3:
-        if tensor.shape[2] == 3:
-            image = Image.fromarray(np.uint8(tensor), "RGB")
-        elif tensor.shape[2] == 4:
-            image = Image.fromarray(np.uint8(tensor), "RGBA")
-
+            tensor *= 254.0 / np.nanmax(tensor)
+            tensor += 1.0
         else:
-            raise ValueError(
-                "Third dimension of tensor must have length 3 (RGB) or 4 (RGBA)"
-            )
-    else:
-        raise ValueError("Incorrect number of dimensions in tensor")
-    byte_io = io.BytesIO()
-    image.save(byte_io, format="png")
+            tensor *= 255.0 / np.nanmax(tensor)
 
-    byte_io.seek(0)
+        tensor[np.isnan(tensor)] = 0
 
-    base64_data = base64.b64encode(byte_io.read()).decode("ascii")
+        if colormap:
+            if tensor.shape[0] != 1:
+                raise ValueError("The first dimension of a colormap tensor should be 1")
+            if tensor.shape[1] != 256:
+                raise ValueError(
+                    "The second dimension of a colormap tensor should be 256"
+                )
+            if tensor.shape[2] not in [3, 4]:
+                raise ValueError(
+                    "The third dimension of a colormap tensor should be either 3 or 4"
+                )
+            if shift:
+                if tensor.shape[2] != 4:
+                    raise ValueError(
+                        "Can not shift a colormap which is not utilizing alpha channel"
+                    )
+                tensor[0][0][3] = 0.0  # Make first color channel transparent
+
+        if tensor.ndim == 2:
+            image = Image.fromarray(np.uint8(tensor), "L")
+        elif tensor.ndim == 3:
+            if tensor.shape[2] == 3:
+                image = Image.fromarray(np.uint8(tensor), "RGB")
+            elif tensor.shape[2] == 4:
+                image = Image.fromarray(np.uint8(tensor), "RGBA")
+
+            else:
+                raise ValueError(
+                    "Third dimension of tensor must have length 3 (RGB) or 4 (RGBA)"
+                )
+        else:
+            raise ValueError("Incorrect number of dimensions in tensor")
+
+        byte_io = io.BytesIO()
+        image.save(byte_io, format="png")
+
+        byte_io.seek(0)
+
+        base64_data = base64.b64encode(byte_io.read()).decode("ascii")
 
     return f"data:image/png;base64,{base64_data}"
 
