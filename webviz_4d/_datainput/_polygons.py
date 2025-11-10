@@ -249,6 +249,20 @@ def get_polygon_files(polygon_mapping, selection_list, directory, fmu_dir):
     return paths
 
 
+def get_files_in_directory(directory_path):
+    """
+    Retrieves a list of all files in the specified directory.
+    """
+    file_list = []
+
+    if os.path.exists(directory_path):
+        for entry in os.listdir(directory_path):
+            full_path = os.path.join(directory_path, entry)
+            if os.path.isfile(full_path):
+                file_list.append(full_path)
+    return file_list
+
+
 def get_default_polygon_files(fmu_dir, top_reservoir):
     directory = top_reservoir.get("directory")
     polygons_directory = top_reservoir.get("polygons_directory")
@@ -265,7 +279,7 @@ def get_default_polygon_files(fmu_dir, top_reservoir):
         polygons_directory,
     )
 
-    default_polygon_files = glob.glob(os.path.join(polygons_folder, "*"))
+    default_polygon_files = get_files_in_directory(polygons_folder)
 
     # Default polygons if only aggregated data
     polygons_folder = os.path.join(
@@ -274,7 +288,7 @@ def get_default_polygon_files(fmu_dir, top_reservoir):
         polygons_directory,
     )
 
-    polygon_files = glob.glob(os.path.join(polygons_folder, "*"))
+    polygon_files = get_files_in_directory(polygons_folder)
     default_polygon_files = default_polygon_files + polygon_files
 
     return default_polygon_files
