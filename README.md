@@ -8,7 +8,7 @@ together with other plugins in [webviz-config](https://github.com/equinor/webviz
 Made using [webviz-container-boilerplate](https://github.com/equinor/webviz-container-boilerplate)
 
 
-### Installation
+### Installation 
 
 The easiest way of installing this local package is to run
 ```bash

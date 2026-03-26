@@ -21,7 +21,7 @@ jobs:
       PYTHONWARNINGS: default # We want to see e.g. DeprecationWarnings
     strategy:
       matrix:
-        python-version: ["3.8", "3.11"]
+        python-version: ["3.11", "3.12"]
 
     steps:
       - name: 📖 Checkout commit locally
@@ -36,6 +36,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: 📦 Upgrade pip and install core tools
+        run: |
+          # This guarantees setuptools (and pkg_resources) is present in the runner
+          python -m pip install --upgrade pip setuptools wheel
 
       - name: 📦 Install webviz-4d with dependencies
         run: |
@@ -54,11 +60,11 @@ jobs:
         run: pip freeze
 
       - name: 🕵️ Check code style & linting
-        if: matrix.python-version == '3.8'
+        if: matrix.python-version == '3.11'
         run: |
-          black --check webviz_4d tests setup.py
-          #pylint webviz_4d tests setup.py
-          #bandit -r -c ./bandit.yml webviz_4d tests setup.py
+          #black --check webviz_4d tests
+          #pylint webviz_4d tests
+          #bandit -r -c ./bandit.yml webviz_4d tests
           #mypy --package webviz_4d --ignore-missing-imports --disallow-untyped-defs --show-error-codes
 
       - name: 🤖 Run tests

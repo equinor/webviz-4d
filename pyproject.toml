@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=61.0", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "webviz_4d"
+description = "webviz-4d"
+readme = "README.md"
+authors = [
+    { name = "Equinor" }
+]
+requires-python = "~=3.11"
+classifiers = [
+    "Natural Language :: English",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+dynamic = ["version"]
+dependencies = [
+    "setuptools<81",
+    "webviz-config>=0.6.3",
+    "xtgeo>=4.0.0",
+    "pillow>=10.4",
+    "webviz-subsurface-components==0.4.15",
+]
+
+[project.urls]
+"Source" = "https://github.com/equinor/webviz-4d"
+"Tracker" = "https://github.com/equinor/webviz-4d/issues"
+
+[project.entry-points."webviz_config_plugins"]
+SurfaceViewer4D = "webviz_4d.plugins:SurfaceViewer4D"
+
+[project.optional-dependencies]
+tests = [
+    "selenium>=3.141",
+    "pylint",
+    "mock",
+    "black",
+    "bandit", 
+    "pytest-xdist",
+]
+
+[tool.setuptools]
+zip-safe = false
+
+[tool.setuptools.packages.find]
+exclude = ["tests*"]
+
+[tool.setuptools_scm]
+write_to = "webviz_4d/_version.py"
+fallback_version = "0.0.0"
+
+[tool.pylint.main]
+ignore = ["webviz_4d/_version.py"]
