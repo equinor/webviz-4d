@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=61.0", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "webviz-4d"
+description = "Webviz config plugins for subsurface data"
+readme = "README.md"
+authors = [
+    { name = "R&T Equinor" },
+]
+license = { file = "LICENSE" }
+requires-python = "~=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Natural Language :: English",
+    "Environment :: Web Environment",
+    "Framework :: Dash",
+    "Framework :: Flask",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+]
+dynamic = ["version"]
+dependencies = [
+    "dash>=2.0.0,<3",
+    "dash_bootstrap_components>=0.10.3",
+    "dash-daq>=0.5.0",
+    "defusedxml>=0.6.0",
+    "res2df>=1.0; sys_platform=='linux'",
+    "flask-caching",
+    "fmu-ensemble>=1.2.3",
+    "fmu-tools>=1.8",
+    "geojson>=2.5.0",
+    "jsonschema>=3.2.0",
+    "opm>=2023.10; sys_platform=='linux'",
+    "pandas>=1.1.5,<3",
+    "pillow>=6.1",
+    "pyarrow>=5.0.0",
+    "pyjwt>=2.6.0",
+    "pyscal>=0.7.5",
+    "scipy>=1.16",
+    "statsmodels>=0.14.5",
+    "xtgeo>=2.20.0",
+    "vtk>=9.2.2",
+    "webviz-config>=0.6.5",
+    "webviz-subsurface-components>=1.0.6",
+]
+
+[project.optional-dependencies]
+tests = [
+    "bandit",
+    "black>=22.1,<24",
+    "dash[testing]",
+    "isort",
+    "mypy<1.12",
+    "pylint<3.2.0",
+    "pytest-mock",
+    "pytest-xdist",
+    "pytest-forked",
+    "selenium>=3.141",
+    "types-setuptools",
+    "types-pyyaml",
+]
+
+[tool.setuptools.packages.find]
+exclude = ["tests*"]
+
+[tool.setuptools_scm]
+write_to = "webviz_4d/_version.py"
+fallback_version = "0.0.0"
